@@ -1,0 +1,13 @@
+Parametros guion:
+pdfentrada = Nombre del pdf con la fatura
+pdfsalida = Nombre del pdf con el QR
+url = direccion url para la validacion. Si no se pasa se forma segun los parametros entorno, verifactu.
+entorno = "pruebas" para el envio a la web de pruebas. Por defecto se envia a produccion
+verifactu = SI/NO para indicar si son facturas verificables o no. Si no se pasa el parametro se pone como si
+nifemisor = NIF del emisor de la factura para incluir en el QR
+numerofactura = Numero de de factura para icluir en el QR
+fechafactura = Fecha de la factura para incluir en el QR
+totalfactura = Importe total de la factura para incluir en el QR
+posicionx = posicion en milimetros desde el margen izquierdo. Por defecto 10 mm
+posiciony = posicion en milimetros desde el margen superior. Por defecto 10 mm
+ancho = ancho del QR en milimetros (el alto sera el mismo) por defecto 40 mm

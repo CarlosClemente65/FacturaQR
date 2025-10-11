@@ -1,39 +1,24 @@
 ﻿using System;
+using System.IO;
 
 namespace FacturaQR
 {
     public class Program
     {
+        public static string RutaFicheros = Directory.GetCurrentDirectory();
         static void Main(string[] args)
         {
-            if(args.Length < 8)
+            string resultado = Configuracion.CargarParametros(args);
+
+            if(string.IsNullOrEmpty(resultado))
             {
-                Console.WriteLine("Uso: FacturaQR <pdfOriginal> <pdfSalida> <textoQr> <textoArriba> <textoAbajo> <posX> <posY> <ancho> <alto>");
-                return;
+                resultado += InsertaQR.InsertarQR();
             }
 
-            try
+            if(!string.IsNullOrEmpty(resultado))
             {
-                string pdfOriginal = args[0];
-                string pdfSalida = args[1];
-                string textoQr = args[2];
-                string textoArriba = args[3];
-                string textoAbajo = args[4];
-                double posX = double.Parse(args[5]);
-                double posY = double.Parse(args[6]);
-                double ancho = double.Parse(args[7]);
-                double alto = double.Parse(args[8]);
-
-                InsertaQR.InsertarQrConTexto(pdfOriginal, pdfSalida, textoQr, textoArriba, textoAbajo, posX, posY, ancho, alto);
-
-                Console.WriteLine($"QR insertado correctamente en '{pdfSalida}'");
-            }
-            catch(Exception ex)
-            {
-                Console.WriteLine("Error al insertar el QR: " + ex.Message);
+                File.WriteAllText(Path.Combine(Configuracion.RutaFicheros, "errores.txt"), resultado);
             }
         }
-
-
     }
 }
