@@ -44,6 +44,9 @@ namespace FacturaQR
         // Color del QR
         public static string ColorQR { get; private set; } = "#000000"; // Por defecto negro
 
+        // Marca de agua
+        public static string MarcaAgua { get; private set; }
+
 
         public static string CargarParametros(string[] args)
         {
@@ -220,6 +223,10 @@ namespace FacturaQR
 
                 case "color":
                     ColorQR = valor;
+                    break;
+
+                case "marcaagua":
+                    MarcaAgua = valor.Replace("\\n","\n");
                     break;
             }
         }

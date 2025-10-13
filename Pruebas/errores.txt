@@ -1,1 +1,1 @@
-El codigo de color del QR no es valido
+Error al insertar el QR: El proceso no puede obtener acceso al archivo 'c:\Programacion\C#\FacturaQR\Pruebas\Factura_salida.pdf' porque está siendo utilizado en otro proceso.

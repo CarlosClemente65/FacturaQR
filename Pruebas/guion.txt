@@ -9,3 +9,4 @@ posicionx=170
 posiciony=5
 ancho=25
 colores=#FF0000
+marcaagua=BORRADOR DE FACTURA. \nNO VALIDO A EFECTOS FISCALES

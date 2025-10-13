@@ -21,3 +21,4 @@ Parametros del guion:
 	* posiciony=posicion en milimetros desde el margen superior; opcional (si no se pasa se fija en 10 mm)
 	* ancho=ancho del QR en milimetros (el alto sera el mismo) por defecto 30 mm
 	* color=Color del QR en formato hexadecimal; opcional (si no se pasa se fija en negro #000000)
+	* marcaagua=Texto para insertar una marca de agua en el documento (no es necesario poner comillas); opcional (se pueden poner saltos de linea con '\n')
