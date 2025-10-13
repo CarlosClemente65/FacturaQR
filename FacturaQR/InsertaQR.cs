@@ -28,10 +28,12 @@ namespace FacturaQR
             {
                 PdfDocument documento = PdfReader.Open(rutaPdfOriginal, PdfDocumentOpenMode.Modify);
 
+                Color colorQR = ColorTranslator.FromHtml(Configuracion.ColorQR);
+
                 using(QRCodeGenerator qrGenerator = new QRCodeGenerator())
                 using(QRCodeData qrCodeData = qrGenerator.CreateQrCode(textoQr, QRCodeGenerator.ECCLevel.Q))
                 using(QRCode qrCode = new QRCode(qrCodeData))
-                using(Bitmap qrBitmap = qrCode.GetGraphic(20))
+                using(Bitmap qrBitmap = qrCode.GetGraphic(20,colorQR,Color.White, true))
                 {
                     XImage qrImage;
                     using(var ms = new System.IO.MemoryStream())

@@ -1,1 +1,1 @@
-Clave de inicio incorrecta.
+El codigo de color del QR no es valido

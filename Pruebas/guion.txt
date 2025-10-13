@@ -1,10 +1,11 @@
-pdfentrada="D:\Programacion\C#\FacturaQR\Pruebas\Factura.pdf"
+pdfentrada="c:\Programacion\C#\FacturaQR\Pruebas\Factura.pdf"
 entorno=pruebas
-verifactu=no
+verifactu=si
 nifemisor=05196375P
 numerofactura=25 / 1234
 fechafactura=01.09.2025
 totalfactura=150,22
 posicionx=170
 posiciony=5
-ancho=30
+ancho=25
+colores=#FF0000

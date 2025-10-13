@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Drawing.Text;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using PdfSharp.Internal;
+using System.Text.RegularExpressions;
 
 namespace FacturaQR
 {
@@ -44,6 +40,9 @@ namespace FacturaQR
         // Tamaño del QR
         public static double Ancho { get; private set; } = 40;
         public static double Alto { get; private set; } = 40;
+
+        // Color del QR
+        public static string ColorQR { get; private set; } = "#000000"; // Por defecto negro
 
 
         public static string CargarParametros(string[] args)
@@ -113,6 +112,12 @@ namespace FacturaQR
                 resultado.AppendLine("El parámetro 'totalFactura' es obligatorio.");
             }
 
+            // Valida si el color pasado es valido
+            if(!ColorValido(ColorQR))
+            {
+                resultado.AppendLine("El codigo de color del QR no es valido");
+            }
+
             // Codificar los parámetros para la URL en UTF-8
             StringBuilder urlBuilder = new StringBuilder();
             urlBuilder.Append(UrlEnvio).Append("?");
@@ -151,6 +156,10 @@ namespace FacturaQR
                     }
                     break;
 
+                case "url":
+                    UrlEnvio = valor;
+                    break;
+
                 case "entorno":
                     if(valor.ToLower() == "pruebas")
                     {
@@ -164,10 +173,6 @@ namespace FacturaQR
                         VeriFactu = false;
                         TextoAbajo = ""; // Si no es VeriFactu, no se pone texto abajo
                     }
-                    break;
-
-                case "url":
-                    UrlEnvio = valor;
                     break;
 
                 case "nifemisor":
@@ -212,6 +217,10 @@ namespace FacturaQR
                     Ancho = double.Parse(valor);
                     Alto = Ancho; // Mantener proporción cuadrada
                     break;
+
+                case "color":
+                    ColorQR = valor;
+                    break;
             }
         }
 
@@ -227,6 +236,11 @@ namespace FacturaQR
             {
                 return urlBase + "ValidarQRNoVerifactu";
             }
+        }
+
+        private static bool ColorValido (string colorHex)
+        {
+            return Regex.IsMatch(colorHex, @"^#(?:[0-9a-fA-F]{6})$");
         }
     }
 
