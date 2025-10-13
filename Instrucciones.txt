@@ -1,0 +1,23 @@
+Para la ejecucion del programa, se pasa como parametros la clave 'ds123456' y un fichero de texto con los 
+parametros necesarios para incluir el codigo QR
+
+Ejecucion:
+	* FacturaQR ds123456 guion.txt
+	
+Gestion de errores:
+	Si se produce algun error por algun parametro que falte o no sea correcto, se genera el fichero "errores.txt" con el detalle
+
+Parametros del guion:
+	* pdfentrada=Nombre del pdf con la fatura; obligatorio
+	* pdfsalida=Nombre del pdf con el QR; opcional (si no se pasa se añade al de entrada el texto "_salida"
+	* url=direccion url para la validacion; opcional (si no se pasa se forma segun los parametros entorno y verifactu)
+	* entorno='pruebas' para forzar el envio a la web de pruebas; opcional (si no se pasa se envia a produccion)
+	* verifactu=SI/NO para indicar si son facturas verificables; opcional (si no se pasa se pone como SI)
+	* nifemisor=NIF del emisor de la factura para incluir en el QR; obligatorio
+	* numerofactura=Numero de de factura para incluir en el QR; obligatorio
+	* fechafactura=Fecha de la factura para incluir en el QR; obligatorio
+	* totalfactura=Importe total de la factura para incluir en el QR; obligatorio
+	* posicionx=posicion en milimetros desde el margen izquierdo; opcional (si no se pasa se fija en 10 mm)
+	* posiciony=posicion en milimetros desde el margen superior; opcional (si no se pasa se fija en 10 mm)
+	* ancho=ancho del QR en milimetros (el alto sera el mismo) por defecto 30 mm
+	* color=Color del QR en formato hexadecimal; opcional (si no se pasa se fija en negro #000000)
