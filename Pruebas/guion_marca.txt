@@ -1,5 +1,5 @@
 pdfentrada="C:\FacturaQR\Factura.pdf"
-pdfsalida="C:\FacturaQR\Factura_salida.pdf"
+pdfsalida="C:\FacturaQR\Factura_salida_agua.pdf"
 entorno=pruebas
 verifactu=si
 nifemisor=05196375P
@@ -9,4 +9,5 @@ totalfactura=150,22
 posicionx=160
 posiciony=5
 ancho=25
-color=#000000
+color=#0000FF
+MARCAAGUA=FACTURA BORRADOR SIN VALIDEZ A EFECTOS FISCALES
