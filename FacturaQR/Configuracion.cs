@@ -87,7 +87,6 @@ namespace FacturaQR
             if(string.IsNullOrEmpty(PdfEntrada))
             {
                 resultado.AppendLine("El parámetro 'pdfEntrada' es obligatorio.");
-                throw new ArgumentException("El parámetro 'pdfEntrada' es obligatorio.");
             }
 
             if(!File.Exists(PdfEntrada))
@@ -164,14 +163,13 @@ namespace FacturaQR
                         Program.RutaFicheros = Path.GetDirectoryName(PdfEntrada);
                     }
 
-                    PdfSalida = Path.Combine(Program.RutaFicheros, Path.GetFileNameWithoutExtension(PdfEntrada) + "salida.pdf"); // Se asigna un valor por defecto al PDF de salida
+                    PdfSalida = Path.Combine(Program.RutaFicheros, Path.GetFileNameWithoutExtension(PdfEntrada) + "_salida.pdf"); // Se asigna un valor por defecto al PDF de salida
 
                     break;
 
                 case "pdfsalida":
                     if(!string.IsNullOrEmpty(valor))
                     {
-                        PdfSalida = valor;
                         PdfSalida = Path.GetFullPath(valor.Trim('"'));
                     }
                     break;
@@ -261,6 +259,7 @@ namespace FacturaQR
             }
         }
 
+        // Establece la ruta para insertar el QR en funcion del entorno y si aplica Verifactu
         private static string ObtenerUrl(bool produccion, bool verifactu)
         {
             string urlBase = produccion ? UrlProduccionBase : UrlPruebasBase;

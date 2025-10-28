@@ -13,6 +13,7 @@ namespace FacturaQR
     {
         public static string InsertarQR()
         {
+            // Asignacion de propiedades para usarlas en la clase
             string resultado = string.Empty;
             string rutaPdfOriginal = Configuracion.PdfEntrada;
             string rutaPdfSalida = Configuracion.PdfSalida;
@@ -32,14 +33,16 @@ namespace FacturaQR
 
             try
             {
+                // Abre el PDF al que insertar las imagenes
                 PdfDocument documento = PdfReader.Open(rutaPdfOriginal, PdfDocumentOpenMode.Modify);
 
+                // Crea el objeto del QR para luego leerlo del fichero o generarlo
                 XImage qrImage = null;
 
                 // Carga o genera el código QR
                 if(Configuracion.UsarQrExterno == true)
                 {
-                    // Si se pasa un fichero externo, se carga directamente
+                    // Si se pasa un fichero externo, se carga la imagen en el objeto QR
                     qrImage = XImage.FromFile(Configuracion.NombreFicheroQR);
                 }
                 else
@@ -59,43 +62,45 @@ namespace FacturaQR
                     }
                 }
 
-                // Se añade el QR a la primera página del PDF
+                // Se estable la pagina 1 del PDF para añadir las imagenes (QR y marca de agua)
                 PdfPage pagina = documento.Pages[0];
 
-                // Ajuste de la posicion por si hay desbordamiento a la derecha
+                // Ajuste de la posicion del QR por si hay desbordamiento a la derecha
                 double desbordaDerecha = posX + ancho - pagina.Width;
                 if(desbordaDerecha > 0)
                 {
                     posX -= desbordaDerecha + 10;
                 }
 
-                // Se añade el recuadro donde se incluira el QR y los textos
+                // Se crea un recuadro donde se incluira el QR y los textos
                 XGraphics gfx = XGraphics.FromPdfPage(pagina);
 
-                // Insertar marca de agua (solo si tiene contenido)
+                // Primero se inserta la marca de agua (si tiene contenido) para que quede debajo del todo
                 string marcaAgua = Configuracion.MarcaAgua;
                 if(!string.IsNullOrEmpty(marcaAgua))
                 {
                     pagina = InsertaMarcaAgua(pagina, gfx);
                 }
 
-                double altoFuente = 9; // Altura aproximada del texto en puntos
+                double altoFuente = 8; // Altura aproximada del texto en puntos
 
                 // Fuente para los textos
                 XFont font = new XFont("Arial", altoFuente, XFontStyle.Bold);
+
+                // Color a aplicar a los textos igual al del QR
                 XBrush brocha = new XSolidBrush(XColor.FromArgb(colorQR.A, colorQR.R, colorQR.G, colorQR.B));
 
-                // Inserta el texto arrib del QR
+                // Primero se inserta el texto arriba del QR
                 if(Configuracion.UsarQrExterno != true) // Solo se pone el texto cuando no se use el QR externo
                 {
                     // Texto encima del QR (se deja un margen de 10 puntos)
                     gfx.DrawString(textoArriba, font, brocha, new XRect(posX, posY - altoFuente, ancho, altoFuente), XStringFormats.Center);
                 }
 
-                // Inserta el QR
+                // Despues se inserta el QR
                 gfx.DrawImage(qrImage, posX, posY, ancho, alto);
 
-                // Texto debajo del QR (se deja un margen de 2 puntos ademas del alto de de la fuente)
+                // Por ultimo se inserta el texto debajo del QR
                 if(Configuracion.UsarQrExterno != true) // Solo se pone el texto cuando no se use el QR externo
                 {
                     // Texto debajo del QR (se deja un margen de 2 puntos ademas del alto de de la fuente)
@@ -120,8 +125,8 @@ namespace FacturaQR
             string marcaAgua = Configuracion.MarcaAgua;
 
             // Fuente y pincel para dibujar el texto
-            XFont fuenteMarca = new XFont("Arial", 30, XFontStyle.BoldItalic);
-            XBrush pincelMarca = new XSolidBrush(XColor.FromArgb(0, 220, 220, 220)); // Gris muy claro (el primer cero es la transparencia pero no se puede aplicar a un PDF)
+            XFont fuenteMarca = new XFont("Arial", 20, XFontStyle.BoldItalic);
+            XBrush pincelMarca = new XSolidBrush(XColor.FromArgb(0, 225, 225, 225)); // Gris muy claro (el primer cero es la transparencia pero no se puede aplicar a un PDF)
 
             // Ajuste en varias lineas si es necesario
             List<string> lineas = new List<string>();
