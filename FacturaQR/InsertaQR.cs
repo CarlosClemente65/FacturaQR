@@ -25,7 +25,7 @@ namespace FacturaQR
             double posY = XUnit.FromMillimeter(Configuracion.PosY).Point;
             double ancho = XUnit.FromMillimeter(Configuracion.Ancho).Point;
             double alto = XUnit.FromMillimeter(Configuracion.Alto).Point;
-            
+
 
             // Convierte el color hexadecimal para usarlo en el QR
             Color colorQR = ColorTranslator.FromHtml(Configuracion.ColorQR);
@@ -34,58 +34,76 @@ namespace FacturaQR
             {
                 PdfDocument documento = PdfReader.Open(rutaPdfOriginal, PdfDocumentOpenMode.Modify);
 
-                using(QRCodeGenerator qrGenerator = new QRCodeGenerator())
-                using(QRCodeData qrCodeData = qrGenerator.CreateQrCode(textoQr, QRCodeGenerator.ECCLevel.Q))
-                using(QRCode qrCode = new QRCode(qrCodeData))
-                using(Bitmap qrBitmap = qrCode.GetGraphic(20, colorQR, Color.White, true))
+                XImage qrImage = null;
+
+                // Carga o genera el código QR
+                if(Configuracion.UsarQrExterno == true)
                 {
-                    XImage qrImage;
-                    using(var ms = new System.IO.MemoryStream())
+                    // Si se pasa un fichero externo, se carga directamente
+                    qrImage = XImage.FromFile(Configuracion.NombreFicheroQR);
+                }
+                else
+                {
+                    // Si no, se genera el código QR a partir del texto proporcionado
+                    using(QRCodeGenerator qrGenerator = new QRCodeGenerator())
+                    using(QRCodeData qrCodeData = qrGenerator.CreateQrCode(textoQr, QRCodeGenerator.ECCLevel.Q))
+                    using(QRCode qrCode = new QRCode(qrCodeData))
+                    using(Bitmap qrBitmap = qrCode.GetGraphic(20))
                     {
-                        qrBitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                        ms.Position = 0;
-                        qrImage = XImage.FromStream(ms);
-                    }
-
-                    // Se añade el QR solo a la primera página del PDF
-                    PdfPage pagina = documento.Pages[0];
-
-                    // Ajuste de la posicion por si hay desbordamiento a la derecha
-                    double desbordaDerecha = posX + ancho - pagina.Width;
-                    if (desbordaDerecha > 0)
-                    {
-                        posX -= desbordaDerecha + 10;
-                    }
-
-                    // Se añade el recuadro donde se incluira el QR y los textos
-                    XGraphics gfx = XGraphics.FromPdfPage(pagina);
-
-                    // Insertar marca de agua (solo si tiene contenido)
-                    string marcaAgua = Configuracion.MarcaAgua;
-                    if(!string.IsNullOrEmpty(marcaAgua))
-                    {
-                        pagina = InsertaMarcaAgua(pagina, gfx);
-                    }
-
-                    // Insertar el codigo QR
-                    if(Configuracion.QRValido)
-                    {
-                        double altoFuente = 9; // Altura aproximada del texto en puntos
-
-                        // Fuente para los textos
-                        XFont font = new XFont("Arial", altoFuente, XFontStyle.Bold);
-                        XBrush brocha = new XSolidBrush(XColor.FromArgb(colorQR.A, colorQR.R, colorQR.G, colorQR.B));
-
-                        // Texto encima del QR (se deja un margen de 10 puntos)
-                        gfx.DrawString(textoArriba, font, brocha, new XRect(posX, posY - altoFuente, ancho, altoFuente), XStringFormats.Center);
-
-                        // QR
-                        gfx.DrawImage(qrImage, posX, posY, ancho, alto);
-
-                        // Texto debajo del QR (se deja un margen de 2 puntos ademas del alto de de la fuente)
-                        gfx.DrawString(textoAbajo, font, brocha, new XRect(posX, posY + alto, ancho, altoFuente), XStringFormats.Center);
+                        using(var ms = new System.IO.MemoryStream())
+                        {
+                            qrBitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                            ms.Position = 0;
+                            qrImage = XImage.FromStream(ms);
+                        }
                     }
                 }
+
+                // Se añade el QR a la primera página del PDF
+                PdfPage pagina = documento.Pages[0];
+
+                // Ajuste de la posicion por si hay desbordamiento a la derecha
+                double desbordaDerecha = posX + ancho - pagina.Width;
+                if(desbordaDerecha > 0)
+                {
+                    posX -= desbordaDerecha + 10;
+                }
+
+                // Se añade el recuadro donde se incluira el QR y los textos
+                XGraphics gfx = XGraphics.FromPdfPage(pagina);
+
+                // Insertar marca de agua (solo si tiene contenido)
+                string marcaAgua = Configuracion.MarcaAgua;
+                if(!string.IsNullOrEmpty(marcaAgua))
+                {
+                    pagina = InsertaMarcaAgua(pagina, gfx);
+                }
+
+                double altoFuente = 9; // Altura aproximada del texto en puntos
+
+                // Fuente para los textos
+                XFont font = new XFont("Arial", altoFuente, XFontStyle.Bold);
+                XBrush brocha = new XSolidBrush(XColor.FromArgb(colorQR.A, colorQR.R, colorQR.G, colorQR.B));
+
+                // Inserta el texto arrib del QR
+                if(Configuracion.UsarQrExterno != true) // Solo se pone el texto cuando no se use el QR externo
+                {
+                    // Texto encima del QR (se deja un margen de 10 puntos)
+                    gfx.DrawString(textoArriba, font, brocha, new XRect(posX, posY - altoFuente, ancho, altoFuente), XStringFormats.Center);
+                }
+
+                // Inserta el QR
+                gfx.DrawImage(qrImage, posX, posY, ancho, alto);
+
+                // Texto debajo del QR (se deja un margen de 2 puntos ademas del alto de de la fuente)
+                if(Configuracion.UsarQrExterno != true) // Solo se pone el texto cuando no se use el QR externo
+                {
+                    // Texto debajo del QR (se deja un margen de 2 puntos ademas del alto de de la fuente)
+                    gfx.DrawString(textoAbajo, font, brocha, new XRect(posX, posY + alto, ancho, altoFuente), XStringFormats.Center);
+                }
+
+                qrImage.Dispose();
+
                 documento.Save(rutaPdfSalida);
             }
             catch(Exception ex)

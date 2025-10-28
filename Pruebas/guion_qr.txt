@@ -1,0 +1,6 @@
+pdfentrada="D:\Programacion\C#\FacturaQR\Pruebas\Factura.pdf"
+ficheroqr="D:\Programacion\C#\FacturaQR\Pruebas\qr-code.png"
+posicionx=170
+posiciony=5
+ancho=30
+verifactu=no

@@ -13,8 +13,11 @@ namespace FacturaQR
         public static string RutaFicheros { get; private set; } = Program.RutaFicheros;
 
         // Datos para el texto del QR
+        public static bool? UsarQrExterno = null; // Indica si se usa un fichero de QR externo
+        public static bool? QRValido = null; // Control para incluir o no el QR en el PDF
 
-        public static bool QRValido = false; // Control para incluir o no el QR en el PDF
+        // Nombre del fichero del QR
+        public static string NombreFicheroQR { get; private set; }
 
         // Base de la URL del QR
         private static string UrlPruebasBase { get; set; } = @"https://prewww2.aeat.es/wlpl/TIKE-CONT/";
@@ -87,24 +90,31 @@ namespace FacturaQR
                 throw new ArgumentException("El parámetro 'pdfEntrada' es obligatorio.");
             }
 
-            if(File.Exists(PdfEntrada) == false)
+            if(!File.Exists(PdfEntrada))
             {
                 resultado.AppendLine("El PDF de entrada no existe.");
             }
 
-            // Chequea si se han pasado los valores del QR
-            if(QRValido)
+            // Chequea si se ha pasado un fichero QR externo
+            if(UsarQrExterno == true)
+            {
+                // Chequea que el fichero del QR existe
+                if(!File.Exists(NombreFicheroQR))
+                {
+                    resultado.AppendLine("El fichero del código QR no existe.");
+                }
+
+                // No se genera el QR si se pasa un fichero externo
+                QRValido = false;
+            }
+
+            // Si se ha pasado el NIF del emisor (QRValido = true), se valida el resto de parámetros para generar el QR
+            if(QRValido == true)
             {
                 if(string.IsNullOrEmpty(UrlEnvio))
                 {
                     UrlEnvio = ObtenerUrl(EntornoProduccion, VeriFactu); // Si no se ha pasado, se genera segun el resto de parametros (por defecto entorno producción y VeriFactu)
                 }
-
-                // Se comenta el chequeo del Nif porque si no se pasa, no se inserta el QR
-                //if(string.IsNullOrEmpty(NifEmisor))
-                //{
-                //    resultado.AppendLine("El parámetro 'nifEmisor' es obligatorio.");
-                //}
 
                 if(string.IsNullOrEmpty(NumeroFactura))
                 {
@@ -161,12 +171,21 @@ namespace FacturaQR
                 case "pdfsalida":
                     if(!string.IsNullOrEmpty(valor))
                     {
-                        PdfSalida = Path.GetFullPath(valor.Trim('"')); ;
+                        PdfSalida = valor;
+                        PdfSalida = Path.GetFullPath(valor.Trim('"'));
                     }
                     break;
 
                 case "url":
                     UrlEnvio = valor;
+                    break;
+
+                case "ficheroqr":
+                    if(!string.IsNullOrEmpty(valor))
+                    {
+                        NombreFicheroQR = Path.GetFullPath(valor.Trim('"'));
+                        UsarQrExterno = true; // Se indica que se usará un fichero externo
+                    }
                     break;
 
                 case "entorno":
