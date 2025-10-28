@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Drawing.Text;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using PdfSharp.Internal;
+using System.Text.RegularExpressions;
 
 namespace FacturaQR
 {
@@ -17,6 +13,11 @@ namespace FacturaQR
         public static string RutaFicheros { get; private set; } = Program.RutaFicheros;
 
         // Datos para el texto del QR
+        public static bool? UsarQrExterno = null; // Indica si se usa un fichero de QR externo
+        public static bool? QRValido = null; // Control para incluir o no el QR en el PDF
+
+        // Nombre del fichero del QR
+        public static string NombreFicheroQR { get; private set; }
 
         // Base de la URL del QR
         private static string UrlPruebasBase { get; set; } = @"https://prewww2.aeat.es/wlpl/TIKE-CONT/";
@@ -42,8 +43,14 @@ namespace FacturaQR
         public static double PosY { get; private set; } = 10;
 
         // Tamaño del QR
-        public static double Ancho { get; private set; } = 40;
-        public static double Alto { get; private set; } = 40;
+        public static double Ancho { get; private set; } = 30;
+        public static double Alto { get; private set; } = 30;
+
+        // Color del QR
+        public static string ColorQR { get; private set; } = "#000000"; // Por defecto negro
+
+        // Marca de agua
+        public static string MarcaAgua { get; private set; }
 
 
         public static string CargarParametros(string[] args)
@@ -80,52 +87,68 @@ namespace FacturaQR
             if(string.IsNullOrEmpty(PdfEntrada))
             {
                 resultado.AppendLine("El parámetro 'pdfEntrada' es obligatorio.");
-                throw new ArgumentException("El parámetro 'pdfEntrada' es obligatorio.");
             }
 
-            if(File.Exists(PdfEntrada) == false)
+            if(!File.Exists(PdfEntrada))
             {
                 resultado.AppendLine("El PDF de entrada no existe.");
             }
 
-            if(string.IsNullOrEmpty(UrlEnvio))
+            // Chequea si se ha pasado un fichero QR externo
+            if(UsarQrExterno == true)
             {
-                UrlEnvio = ObtenerUrl(EntornoProduccion, VeriFactu); // Si no se ha pasado, se genera segun el resto de parametros (por defecto entorno producción y VeriFactu)
+                // Chequea que el fichero del QR existe
+                if(!File.Exists(NombreFicheroQR))
+                {
+                    resultado.AppendLine("El fichero del código QR no existe.");
+                }
+
+                // No se genera el QR si se pasa un fichero externo
+                QRValido = false;
             }
 
-            if(string.IsNullOrEmpty(NifEmisor))
+            // Si se ha pasado el NIF del emisor (QRValido = true), se valida el resto de parámetros para generar el QR
+            if(QRValido == true)
             {
-                resultado.AppendLine("El parámetro 'nifEmisor' es obligatorio.");
+                if(string.IsNullOrEmpty(UrlEnvio))
+                {
+                    UrlEnvio = ObtenerUrl(EntornoProduccion, VeriFactu); // Si no se ha pasado, se genera segun el resto de parametros (por defecto entorno producción y VeriFactu)
+                }
+
+                if(string.IsNullOrEmpty(NumeroFactura))
+                {
+                    resultado.AppendLine("El parámetro 'numeroFactura' es obligatorio.");
+                }
+
+                if(FechaFactura == DateTime.MinValue)
+                {
+                    resultado.AppendLine("El parámetro 'fechaFactura' es obligatorio.");
+                }
+
+                if(TotalFactura == 0)
+                {
+                    resultado.AppendLine("El parámetro 'totalFactura' es obligatorio.");
+                }
+
+                // Valida si el color pasado es valido
+                if(!ColorValido(ColorQR))
+                {
+                    resultado.AppendLine("El codigo de color del QR no es valido");
+                }
+
+                // Codificar los parámetros para la URL en UTF-8
+                StringBuilder urlBuilder = new StringBuilder();
+                urlBuilder.Append(UrlEnvio).Append("?");
+                urlBuilder.Append("nif=").Append(Uri.EscapeUriString(NifEmisor)).Append("&");
+                urlBuilder.Append("numserie=").Append(Uri.EscapeUriString(NumeroFactura)).Append("&");
+                urlBuilder.Append("fecha=").Append(FechaFactura.ToString("dd-MM-yyyy")).Append("&");
+                urlBuilder.Append("importe=").Append(TotalFactura.ToString("F2").Replace(',', '.')); // Asegurar que el decimal es punto
+
+                // Construir la URL completa
+                UrlEnvio = urlBuilder.ToString();
             }
-
-            if(string.IsNullOrEmpty(NumeroFactura))
-            {
-                resultado.AppendLine("El parámetro 'numeroFactura' es obligatorio.");
-            }
-
-            if(FechaFactura == DateTime.MinValue)
-            {
-                resultado.AppendLine("El parámetro 'fechaFactura' es obligatorio.");
-            }
-
-            if(TotalFactura == 0)
-            {
-                resultado.AppendLine("El parámetro 'totalFactura' es obligatorio.");
-            }
-
-            // Codificar los parámetros para la URL en UTF-8
-            StringBuilder urlBuilder = new StringBuilder();
-            urlBuilder.Append(UrlEnvio).Append("?");
-            urlBuilder.Append("nif=").Append(Uri.EscapeUriString(NifEmisor)).Append("&");
-            urlBuilder.Append("numserie=").Append(Uri.EscapeUriString(NumeroFactura)).Append("&");
-            urlBuilder.Append("fecha=").Append(FechaFactura.ToString("dd-MM-yyyy")).Append("&");
-            urlBuilder.Append("importe=").Append(TotalFactura.ToString("F2").Replace(',', '.')); // Asegurar que el decimal es punto
-
-            // Construir la URL completa
-            UrlEnvio = urlBuilder.ToString();
 
             return resultado.ToString();
-
         }
 
         private static void AsignaParametros(string clave, string valor)
@@ -137,7 +160,7 @@ namespace FacturaQR
 
                     if(File.Exists(PdfEntrada))
                     {
-                       Program.RutaFicheros = Path.GetDirectoryName(PdfEntrada);
+                        Program.RutaFicheros = Path.GetDirectoryName(PdfEntrada);
                     }
 
                     PdfSalida = Path.Combine(Program.RutaFicheros, Path.GetFileNameWithoutExtension(PdfEntrada) + "_salida.pdf"); // Se asigna un valor por defecto al PDF de salida
@@ -148,6 +171,19 @@ namespace FacturaQR
                     if(!string.IsNullOrEmpty(valor))
                     {
                         PdfSalida = valor;
+                        PdfSalida = Path.GetFullPath(valor.Trim('"'));
+                    }
+                    break;
+
+                case "url":
+                    UrlEnvio = valor;
+                    break;
+
+                case "ficheroqr":
+                    if(!string.IsNullOrEmpty(valor))
+                    {
+                        NombreFicheroQR = Path.GetFullPath(valor.Trim('"'));
+                        UsarQrExterno = true; // Se indica que se usará un fichero externo
                     }
                     break;
 
@@ -166,12 +202,13 @@ namespace FacturaQR
                     }
                     break;
 
-                case "url":
-                    UrlEnvio = valor;
-                    break;
-
                 case "nifemisor":
                     NifEmisor = valor;
+                    if(!string.IsNullOrEmpty(NifEmisor))
+                    {
+                        // Si se ha pasado el NIF del emisor, se insertara el QR
+                        QRValido = true;
+                    }
                     break;
 
                 case "numerofactura":
@@ -212,6 +249,14 @@ namespace FacturaQR
                     Ancho = double.Parse(valor);
                     Alto = Ancho; // Mantener proporción cuadrada
                     break;
+
+                case "color":
+                    ColorQR = valor;
+                    break;
+
+                case "marcaagua":
+                    MarcaAgua = valor.Replace("\\n", "\n");
+                    break;
             }
         }
 
@@ -227,6 +272,11 @@ namespace FacturaQR
             {
                 return urlBase + "ValidarQRNoVerifactu";
             }
+        }
+
+        private static bool ColorValido(string colorHex)
+        {
+            return Regex.IsMatch(colorHex, @"^#(?:[0-9a-fA-F]{6})$");
         }
     }
 
