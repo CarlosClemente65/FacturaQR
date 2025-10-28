@@ -133,14 +133,20 @@ namespace FacturaQR
             string[] bloques = marcaAgua.Split(new string[] { "\n" }, StringSplitOptions.None);
             string linea = "";
 
-            // Calculo del ancho maximo de la marca de agua
-            double margenMm = 20;
-            double anchoPagina = pagina.Width.Point;
-            double altoPagina = pagina.Height.Point;
-            double anchoDiagonal = Math.Sqrt(Math.Pow(anchoPagina, 2) + Math.Pow(altoPagina, 2));
+            // Se define un cuadrado seguro de 200x200 mm para insertar la marca
+            double margenMm = 10;
             double margen = XUnit.FromMillimeter(margenMm).Point;
-            double factorAjuste = 0.80; // Se aplica un ajuste ya que al rotar el texto se desplazan los margenes del recuadro donde se dibuja.
-            double anchoMaximo = (anchoDiagonal - 2 * margen) * factorAjuste;
+            double ladoCuadradoMm = 210;
+            double ladoCuadrado = XUnit.FromMillimeter(ladoCuadradoMm).Point;
+
+            // Calcula el centro del cuadrado seguro
+            double xInicioCuadrado = margen;
+            double yInicioCuadrado = (pagina.Height.Point - ladoCuadrado) / 2;
+            double centroX = xInicioCuadrado + ladoCuadrado / 2;
+            double centroY = yInicioCuadrado + ladoCuadrado / 2;
+
+            //Calculo del ancho maximo de la marca de agua aproximado a diagonal del cuadrado seguro)
+            double anchoMaximo = ladoCuadrado /** Math.Sqrt(2)*/;
 
             foreach(var bloque in bloques)
             {
@@ -165,6 +171,7 @@ namespace FacturaQR
                         linea = textoLinea;
                     }
                 }
+
                 // Se añade la ultima linea calculada
                 if(!string.IsNullOrEmpty(linea))
                 {
@@ -173,30 +180,15 @@ namespace FacturaQR
                 }
             }
 
-            // Calcula el centro de la pagina para rotar
-            double centroX = pagina.Width / 2;
-            double centroY = pagina.Height / 2;
-
-            // Se añade un desplazamiento para ajustar la posicion del texto dentro de la pagina (al rotar se desplaza)
-            double offsetX = 60;
-            double offsetY = -20;
-
             // Se guarda la configuracion para aplicarla solo a la marca de agua
             gfx.Save();
 
             // Rotacion 45 grados a la izquierda para poner la marca de agua
             gfx.RotateAtTransform(-45, new XPoint(centroX, centroY));
 
-            // Formato centrado
-            XStringFormat formatoCentrado = new XStringFormat
-            {
-                Alignment = XStringAlignment.Center,
-                LineAlignment = XLineAlignment.Center
-            };
-
-            // Se aplica el desplazamiento a la posicion del texto.
-            double x = centroX + offsetX;
-            double y = centroY - (lineas.Count * fuenteMarca.Size / 2) + offsetY;
+            // Posicion inicial del texto (centrado en el cuadro seguro)
+            double x = centroX;
+            double y = centroY - (lineas.Count * fuenteMarca.Size / 2);
 
 
             // Se dibujan una a una las lineas de la marca de agua
