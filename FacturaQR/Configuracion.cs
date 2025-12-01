@@ -26,7 +26,7 @@ namespace FacturaQR
 
         // Define si se usa el entorno de pruebas o producción y si se usa VeriFactu o no
         private static bool EntornoProduccion { get; set; } = true; // Defecto entorno producción
-        public static bool VeriFactu { get; private set; } = true; // Defecto sistema VeriFactu
+        public static bool VeriFactu { get; private set; } = false; // Defecto sistema VeriFactu
 
         // Datos de la factura
         private static string NifEmisor { get; set; }
@@ -36,7 +36,7 @@ namespace FacturaQR
 
         // Texto adiconal del QR
         public static string TextoArriba { get; private set; } = "QR Tributario";
-        public static string TextoAbajo { get; private set; } = "VERI*FACTU";
+        public static string TextoAbajo { get; private set; } = "";
 
         // Posición del QR
         public static double PosX { get; private set; } = 10;
@@ -194,10 +194,10 @@ namespace FacturaQR
                     break;
 
                 case "verifactu":
-                    if(valor.ToLower() == "no")
+                    if(valor.ToLower() == "si")
                     {
-                        VeriFactu = false;
-                        TextoAbajo = ""; // Si no es VeriFactu, no se pone texto abajo
+                        VeriFactu = true;
+                        TextoAbajo = "VERI*FACTU"; // Si es VeriFactu, se pone el texto abajo
                     }
                     break;
 

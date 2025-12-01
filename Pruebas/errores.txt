@@ -1,0 +1,1 @@
+Error al insertar el QR: El proceso no puede obtener acceso al archivo 'C:\Programacion\c#\FacturaQR\Pruebas\25_00001_SAL.pdf' porque está siendo utilizado en otro proceso.

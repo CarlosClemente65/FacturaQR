@@ -1,0 +1,8 @@
+pdfentrada=C:\Programacion\c#\FacturaQR\Pruebas\25_00001.pdf
+pdfsalida=C:\Programacion\c#\FacturaQR\Pruebas\25_00001_SAL.pdf
+ficheroqr=C:\Programacion\c#\FacturaQR\Pruebas\25_00001.bmp
+posicionx=170
+posiciony=5
+ancho=30
+marcaagua=
+verifactu=si

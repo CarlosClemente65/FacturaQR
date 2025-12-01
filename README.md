@@ -49,7 +49,7 @@ FacturaQR.exe ds123456 guion.txt
 * Si no se pasa el nombre de salida, se utiliza el mismo que el de entrada con un sufijo (_salida)
 * La url se puede pasar (debe estar bien formada), y si no se pasa, se genera en base a los datos de la factura, entorno y verifactu
 * El entorno por defecto es la web de produccion (real), por lo que en pruebas debe pasarse el parametro entorno=pruebas
-* Por defecto se funciona en modo VeriFactu, por lo que para no trabajar de ese modo se debe pasar el parametro verifactu=no
+* Por defecto se funciona en modo NO VeriFactu, por lo que para trabajar de ese modo se debe pasar el parametro verifactu=si
 * Si no se pasa el fichero con la imagen QR, es obligatorio pasar los campos nifemisor y datos factura (fecha,numero e importe)
 * Si no se pasa el NIF del emisor no se añadira el QR; si se pasa es obligatorio pasar los demas parametros de la factura.
 * Las posiciones X e Y del QR estan puestas por defecto a 10 mm de los margenes

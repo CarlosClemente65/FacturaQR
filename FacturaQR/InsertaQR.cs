@@ -91,21 +91,15 @@ namespace FacturaQR
                 XBrush brocha = new XSolidBrush(XColor.FromArgb(colorQR.A, colorQR.R, colorQR.G, colorQR.B));
 
                 // Primero se inserta el texto arriba del QR
-                if(Configuracion.UsarQrExterno != true) // Solo se pone el texto cuando no se use el QR externo
-                {
                     // Texto encima del QR (se deja un margen de 10 puntos)
                     gfx.DrawString(textoArriba, font, brocha, new XRect(posX, posY - altoFuente, ancho, altoFuente), XStringFormats.Center);
-                }
 
                 // Despues se inserta el QR
                 gfx.DrawImage(qrImage, posX, posY, ancho, alto);
 
                 // Por ultimo se inserta el texto debajo del QR
-                if(Configuracion.UsarQrExterno != true) // Solo se pone el texto cuando no se use el QR externo
-                {
                     // Texto debajo del QR (se deja un margen de 2 puntos ademas del alto de de la fuente)
                     gfx.DrawString(textoAbajo, font, brocha, new XRect(posX, posY + alto, ancho, altoFuente), XStringFormats.Center);
-                }
 
                 qrImage.Dispose();
 
