@@ -76,6 +76,7 @@ namespace FacturaQR
                 resultado.AppendLine("El archivo de guion no existe.");
             }
 
+            // Leer el archivo de guion y asignar los parámetros
             foreach(string linea in File.ReadAllLines(guion))
             {
                 if(string.IsNullOrWhiteSpace(linea)) ;
@@ -113,21 +114,25 @@ namespace FacturaQR
             // Si se ha pasado el NIF del emisor (QRValido = true), se valida el resto de parámetros para generar el QR
             if(QRValido == true)
             {
+                // Genera la URL de envío del QR si no se ha pasado segun el resto de parametros (por defecto entorno producción y no VeriFactu)
                 if(string.IsNullOrEmpty(UrlEnvio))
                 {
-                    UrlEnvio = ObtenerUrl(EntornoProduccion, VeriFactu); // Si no se ha pasado, se genera segun el resto de parametros (por defecto entorno producción y VeriFactu)
+                    UrlEnvio = ObtenerUrl(EntornoProduccion, VeriFactu);
                 }
 
+                // Valida que se haya pasado el numero de factura
                 if(string.IsNullOrEmpty(NumeroFactura))
                 {
                     resultado.AppendLine("El parámetro 'numeroFactura' es obligatorio.");
                 }
 
+                // Valida que se haya pasado la fecha de la factura
                 if(FechaFactura == DateTime.MinValue)
                 {
                     resultado.AppendLine("El parámetro 'fechaFactura' es obligatorio.");
                 }
 
+                // Valida que se haya pasado el total de la factura
                 if(TotalFactura == 0)
                 {
                     resultado.AppendLine("El parámetro 'totalFactura' es obligatorio.");
@@ -139,7 +144,7 @@ namespace FacturaQR
                     resultado.AppendLine("El codigo de color del QR no es valido");
                 }
 
-                // Codificar los parámetros para la URL en UTF-8
+                // Genera la URL con los parámetros del QR UTF-8
                 StringBuilder urlBuilder = new StringBuilder();
                 urlBuilder.Append(UrlEnvio).Append("?");
                 urlBuilder.Append("nif=").Append(Uri.EscapeUriString(NifEmisor)).Append("&");
@@ -161,6 +166,7 @@ namespace FacturaQR
                 case "pdfentrada":
                     PdfEntrada = Path.GetFullPath(valor.Trim('"'));
 
+                    // Chequea si el fichero existe para asignar la ruta de ficheros
                     if(File.Exists(PdfEntrada))
                     {
                         Program.RutaFicheros = Path.GetDirectoryName(PdfEntrada);
@@ -171,6 +177,7 @@ namespace FacturaQR
                     break;
 
                 case "pdfsalida":
+                    // Chequea si se ha pasado un valor para el PDF de salida
                     if(!string.IsNullOrEmpty(valor))
                     {
                         PdfSalida = Path.GetFullPath(valor.Trim('"'));
@@ -178,10 +185,12 @@ namespace FacturaQR
                     break;
 
                 case "url":
+                    // Si se pasa la URL, se usa esa directamente
                     UrlEnvio = valor;
                     break;
 
                 case "ficheroqr":
+                    // Si se pasa un fichero de QR, se usa ese directamente
                     if(!string.IsNullOrEmpty(valor))
                     {
                         NombreFicheroQR = Path.GetFullPath(valor.Trim('"'));
@@ -190,6 +199,7 @@ namespace FacturaQR
                     break;
 
                 case "entorno":
+                    // Define el entorno de pruebas o producción
                     if(valor.ToLower() == "pruebas")
                     {
                         EntornoProduccion = false;
@@ -197,6 +207,7 @@ namespace FacturaQR
                     break;
 
                 case "verifactu":
+                    // Define si se usa el sistema VeriFactu
                     if(valor.ToLower() == "si")
                     {
                         VeriFactu = true;
@@ -205,6 +216,7 @@ namespace FacturaQR
                     break;
 
                 case "nifemisor":
+                    // Asigna el NIF del emisor
                     NifEmisor = valor;
                     if(!string.IsNullOrEmpty(NifEmisor))
                     {
@@ -214,10 +226,12 @@ namespace FacturaQR
                     break;
 
                 case "numerofactura":
+                    // Asigna el número de la factura
                     NumeroFactura = valor;
                     break;
 
                 case "fechafactura":
+                    // Define los formatos de fecha válidos
                     string[] formatosValidos = { "dd-MM-yyyy", "dd/MM/yyyy", "dd.MM.yyyy" };
 
                     // Intentar parsear la fecha con los formatos válidos
@@ -232,6 +246,7 @@ namespace FacturaQR
                     break;
 
                 case "totalfactura":
+                    // Asigna el total de la factura
                     if(!decimal.TryParse(valor, out decimal total)) // Evita una excepcion si no se pasa el total correcto
                     {
                         total = 0m;
@@ -240,27 +255,33 @@ namespace FacturaQR
                     break;
 
                 case "posicionx":
+                    // Asigna la posición X del QR
                     PosX = double.Parse(valor);
                     break;
 
                 case "posiciony":
+                    // Asigna la posición Y del QR
                     PosY = double.Parse(valor);
                     break;
 
                 case "ancho":
+                    // Asigna el ancho y alto del QR
                     Ancho = double.Parse(valor);
                     Alto = Ancho; // Mantener proporción cuadrada
                     break;
 
                 case "color":
+                    // Asigna el color del QR
                     ColorQR = valor;
                     break;
 
                 case "marcaagua":
+                    // Asigna la marca de agua, reemplazando \n por saltos de línea
                     MarcaAgua = valor.Replace("\\n", "\n");
                     break;
 
                 case "imprimir":
+                    // Define si se imprime a la impresora predeterminada
                     if(string.Equals(valor, "si", StringComparison.OrdinalIgnoreCase))
                     {
                         Imprimir = true;

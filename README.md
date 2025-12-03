@@ -60,3 +60,8 @@ FacturaQR.exe ds123456 guion.txt
 * El color del QR por defecto es negro (#000000)
 * El texto de la marca de agua admite saltos de linea añadiendo '\n' en la posicion donde insertarlo
 * Si se produce algun error por algun parametro que falte o no sea correcto, se genera el fichero "errores.txt" con el detalle
+* En la ruta de ejecucion deben estar los siguientes ficheros:
+	- PdfSharp.dll
+	- QRCoder.dll
+	- SumatraPDF.exe (necesario si se utiliza la opcion de impresion)
+
