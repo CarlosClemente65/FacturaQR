@@ -1,7 +1,7 @@
 pdfentrada="C:\Programacion\c#\FacturaQR\Pruebas\Factura.pdf"
 pdfsalida="C:\Programacion\c#\FacturaQR\Pruebas\Factura_salida.pdf"
 entorno=pruebas
-verifactu=no
+verifactu=si
 nifemisor=05196375P
 numerofactura=25 / 1234
 fechafactura=01.09.2025
