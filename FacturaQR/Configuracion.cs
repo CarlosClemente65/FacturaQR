@@ -52,6 +52,9 @@ namespace FacturaQR
         // Marca de agua
         public static string MarcaAgua { get; private set; }
 
+        // Imprimir a la impresora predeterminada
+        public static bool Imprimir { get; private set; }
+
 
         public static string CargarParametros(string[] args)
         {
@@ -255,6 +258,13 @@ namespace FacturaQR
 
                 case "marcaagua":
                     MarcaAgua = valor.Replace("\\n", "\n");
+                    break;
+
+                case "imprimir":
+                    if(string.Equals(valor, "si", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Imprimir = true;
+                    }
                     break;
             }
         }

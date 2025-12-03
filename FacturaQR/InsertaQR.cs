@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Windows.Documents;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
@@ -91,20 +93,58 @@ namespace FacturaQR
                 XBrush brocha = new XSolidBrush(XColor.FromArgb(colorQR.A, colorQR.R, colorQR.G, colorQR.B));
 
                 // Primero se inserta el texto arriba del QR
-                    // Texto encima del QR (se deja un margen de 10 puntos)
-                    gfx.DrawString(textoArriba, font, brocha, new XRect(posX, posY - altoFuente, ancho, altoFuente), XStringFormats.Center);
+                // Texto encima del QR (se deja un margen de 10 puntos)
+                gfx.DrawString(textoArriba, font, brocha, new XRect(posX, posY - altoFuente, ancho, altoFuente), XStringFormats.Center);
 
                 // Despues se inserta el QR
                 gfx.DrawImage(qrImage, posX, posY, ancho, alto);
 
                 // Por ultimo se inserta el texto debajo del QR
-                    // Texto debajo del QR (se deja un margen de 2 puntos ademas del alto de de la fuente)
-                    gfx.DrawString(textoAbajo, font, brocha, new XRect(posX, posY + alto, ancho, altoFuente), XStringFormats.Center);
+                // Texto debajo del QR (se deja un margen de 2 puntos ademas del alto de de la fuente)
+                gfx.DrawString(textoAbajo, font, brocha, new XRect(posX, posY + alto, ancho, altoFuente), XStringFormats.Center);
 
                 qrImage.Dispose();
 
                 documento.Save(rutaPdfSalida);
+
+                if(Configuracion.Imprimir)
+                {
+                    // Ruta del ejecutable SumatraPDF
+                    string sumatraExe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SumatraPDF.exe");
+
+                    if(!File.Exists(sumatraExe))
+                    {
+                        throw new InvalidOperationException("No se pudo lanzar la impresion del PDF.");
+                    }
+
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = sumatraExe,
+                        Arguments = $"-print-to-default -silent \"{rutaPdfSalida}\"",
+                        CreateNoWindow = true,
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                        UseShellExecute = false
+                    };
+
+                    using(var proceso = Process.Start(psi))
+                    {
+                        // Espera a que SumatraPDF termine
+                        proceso.WaitForExit();
+
+                        // Opcional: comprobar el código de salida
+                        if(proceso.ExitCode != 0)
+                        {
+                            throw new InvalidOperationException($"La impresión del PDF falló. Código de salida: {proceso.ExitCode}");
+                        }
+                    }
+                }
             }
+
+            catch (InvalidOperationException ex)
+            {
+                resultado = ex.Message;
+            }
+
             catch(Exception ex)
             {
                 resultado = "Error al insertar el QR: " + ex.Message;
