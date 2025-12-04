@@ -6,4 +6,4 @@ posiciony=5
 ancho=30
 marcaagua=
 verifactu=si
-imprimir=si
+accionpdf=abrir

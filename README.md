@@ -16,6 +16,7 @@ Añade el codigo QR obligatorio para sistemtas de facturas Veri*Factu, y tambien
 * v1.2.0.0 Incorporada la opción para añadir una marca de agua
 * v1.3.0.0 Incorporada la opcion para pasar la imagen del QR generada de forma externa
 * v1.4.0.0 Incorporada la opcion para imprimir el PDF ademas de guardarlo en disco
+* v1.5.0.0 Incorporada la opcion para abrir el PDF en el visor SumatraPDF
 <br><br>
 
 
@@ -41,7 +42,7 @@ FacturaQR.exe ds123456 guion.txt
 * ancho=ancho del QR en milimetros (el alto sera el mismo)
 * color=Color del QR en formato hexadecimal; opcional
 * marcaagua=Texto para insertar una marca de agua en el documento; opcional
-* imprimir=si; parametro opcional que permite lanzar la impresison por la impresora predeterminada
+* accionpdf=imprimir o abrir; parametro opcional que permite lanzar la impresion por la impresora predeterminada o abrir el PDF en un visor
 
 <br>
 

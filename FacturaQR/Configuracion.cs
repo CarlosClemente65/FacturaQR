@@ -52,8 +52,18 @@ namespace FacturaQR
         // Marca de agua
         public static string MarcaAgua { get; private set; }
 
-        // Imprimir a la impresora predeterminada
-        public static bool Imprimir { get; private set; }
+        // Acciones a realizar con el PDF
+        public enum AccionesPDF
+        {
+            Ninguna,
+            Imprimir,
+            Abrir
+        }
+
+        public static AccionesPDF AccionPDF { get; private set; }
+
+        // Controla si hay que realizar alguna accion con el PDF
+        public static bool EjecutarAcciones{ get; private set; } = false;
 
 
         public static string CargarParametros(string[] args)
@@ -280,11 +290,19 @@ namespace FacturaQR
                     MarcaAgua = valor.Replace("\\n", "\n");
                     break;
 
-                case "imprimir":
-                    // Define si se imprime a la impresora predeterminada
-                    if(string.Equals(valor, "si", StringComparison.OrdinalIgnoreCase))
+                case "accionpdf":
+                    // Define si se imprime a la impresora predeterminada o se muestra el PDF en el visor de SumatraPDF
+                    switch(valor.ToLower())
                     {
-                        Imprimir = true;
+                        case "imprimir":
+                            AccionPDF = AccionesPDF.Imprimir;
+                            EjecutarAcciones = true;
+                            break;
+
+                        case "abrir":
+                            AccionPDF = AccionesPDF.Abrir;
+                            EjecutarAcciones = true;
+                            break;
                     }
                     break;
             }
