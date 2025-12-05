@@ -6,7 +6,9 @@
 <h4> @ Carlos Clemente (Diagram Software Europa S.L.) - 10/2025 </h4>
 
 <h3>Descripción</h3>
-Añade el codigo QR obligatorio para sistemtas de facturas Veri*Factu, y tambien permite añadir una marca de agua
+Añade el codigo QR obligatorio en facturas para sistemas Veri*Factu.
+Permite añadir una marca de agua, y al finalizar puede imprimir o abrir el PDF generado
+Tambien puede usarse como visualizador de ficheros PDF.
 <br><br>
 
 ### Control versiones
@@ -17,6 +19,7 @@ Añade el codigo QR obligatorio para sistemtas de facturas Veri*Factu, y tambien
 * v1.3.0.0 Incorporada la opcion para pasar la imagen del QR generada de forma externa
 * v1.4.0.0 Incorporada la opcion para imprimir el PDF ademas de guardarlo en disco
 * v1.5.0.0 Incorporada la opcion para abrir el PDF en el visor SumatraPDF
+* v1.6.0.0 Incorporada la opcion para visualizar cualquier PDF que se pase por parametro (sin utilizar la insercion del QR)
 <br><br>
 
 
@@ -39,10 +42,10 @@ FacturaQR.exe ds123456 guion.txt
 * totalfactura=Importe total de la factura para incluir en el QR; obligatorio si nifemisor <> ""
 * posicionx=posicion en milimetros desde el margen izquierdo; opcional 
 * posiciony=posicion en milimetros desde el margen superior; opcional
-* ancho=ancho del QR en milimetros (el alto sera el mismo)
+* ancho=ancho del QR en milimetros (el alto sera el mismo); opcional
 * color=Color del QR en formato hexadecimal; opcional
 * marcaagua=Texto para insertar una marca de agua en el documento; opcional
-* accionpdf=imprimir o abrir; parametro opcional que permite lanzar la impresion por la impresora predeterminada o abrir el PDF en un visor
+* accionpdf=[imprimir | abrir | visualizar]; Acciones adicionales a realizar con el PDF; opcional
 
 <br>
 
@@ -61,6 +64,10 @@ FacturaQR.exe ds123456 guion.txt
 * El color del QR por defecto es negro (#000000)
 * El texto de la marca de agua admite saltos de linea añadiendo '\n' en la posicion donde insertarlo
 * Si se produce algun error por algun parametro que falte o no sea correcto, se genera el fichero "errores.txt" con el detalle
+* El parametro 'accionpdf= permite realizar acciones adicionales con el PDF utilizando el programa SumatraPDF
+	- 'abrir' = Abre el PDF generado con el visor
+	- 'imprimir' = Lanza el PDF generado por la impresora predeterminada
+	- 'visualizar' = Abre el PDF pasado por parametro con el visor, omitiendo el proceso de insertar el QR en el PDF
 * En la ruta de ejecucion deben estar los siguientes ficheros:
 	- PdfSharp.dll
 	- QRCoder.dll

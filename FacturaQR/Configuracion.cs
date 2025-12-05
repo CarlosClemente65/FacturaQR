@@ -9,7 +9,6 @@ namespace FacturaQR
     {
         public static string PdfEntrada { get; private set; }
         public static string PdfSalida { get; private set; }
-
         public static string RutaFicheros { get; private set; } = Program.RutaFicheros;
 
         // Datos para el texto del QR
@@ -20,19 +19,19 @@ namespace FacturaQR
         public static string NombreFicheroQR { get; private set; }
 
         // Base de la URL del QR
-        private static string UrlPruebasBase { get; set; } = @"https://prewww2.aeat.es/wlpl/TIKE-CONT/";
-        private static string UrlProduccionBase { get; set; } = @"https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/";
-        public static string UrlEnvio { get; private set; } // URL completa con parámetros
+        public static string UrlPruebasBase { get; set; } = @"https://prewww2.aeat.es/wlpl/TIKE-CONT/";
+        public static string UrlProduccionBase { get; set; } = @"https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/";
+        public static string UrlEnvio { get; set; } // URL completa con parámetros
 
         // Define si se usa el entorno de pruebas o producción y si se usa VeriFactu o no
-        private static bool EntornoProduccion { get; set; } = true; // Defecto entorno producción
+        public static bool EntornoProduccion { get; set; } = true; // Defecto entorno producción
         public static bool VeriFactu { get; private set; } = false; // Defecto sistema VeriFactu
 
         // Datos de la factura
-        private static string NifEmisor { get; set; }
-        private static string NumeroFactura { get; set; }
-        private static DateTime FechaFactura { get; set; }
-        private static decimal TotalFactura { get; set; }
+        public static string NifEmisor { get; set; }
+        public static string NumeroFactura { get; set; }
+        public static DateTime FechaFactura { get; set; }
+        public static decimal TotalFactura { get; set; }
 
         // Texto adiconal del QR
         public static string TextoArriba { get; private set; } = "QR Tributario";
@@ -57,7 +56,8 @@ namespace FacturaQR
         {
             Ninguna,
             Imprimir,
-            Abrir
+            Abrir,
+            Visualizar
         }
 
         public static AccionesPDF AccionPDF { get; private set; }
@@ -97,6 +97,11 @@ namespace FacturaQR
                 }
             }
 
+            return ValidarParametros(resultado).ToString();
+        }
+
+        public static StringBuilder ValidarParametros(StringBuilder resultado)
+        {
             // Validar parámetros obligatorios
             if(string.IsNullOrEmpty(PdfEntrada))
             {
@@ -127,7 +132,7 @@ namespace FacturaQR
                 // Genera la URL de envío del QR si no se ha pasado segun el resto de parametros (por defecto entorno producción y no VeriFactu)
                 if(string.IsNullOrEmpty(UrlEnvio))
                 {
-                    UrlEnvio = ObtenerUrl(EntornoProduccion, VeriFactu);
+                    UrlEnvio = Utilidades.ObtenerUrl(EntornoProduccion, VeriFactu);
                 }
 
                 // Valida que se haya pasado el numero de factura
@@ -149,27 +154,19 @@ namespace FacturaQR
                 }
 
                 // Valida si el color pasado es valido
-                if(!ColorValido(ColorQR))
+                if(!Utilidades.ColorValido(ColorQR))
                 {
                     resultado.AppendLine("El codigo de color del QR no es valido");
                 }
 
-                // Genera la URL con los parámetros del QR UTF-8
-                StringBuilder urlBuilder = new StringBuilder();
-                urlBuilder.Append(UrlEnvio).Append("?");
-                urlBuilder.Append("nif=").Append(Uri.EscapeUriString(NifEmisor)).Append("&");
-                urlBuilder.Append("numserie=").Append(Uri.EscapeUriString(NumeroFactura)).Append("&");
-                urlBuilder.Append("fecha=").Append(FechaFactura.ToString("dd-MM-yyyy")).Append("&");
-                urlBuilder.Append("importe=").Append(TotalFactura.ToString("F2").Replace(',', '.')); // Asegurar que el decimal es punto
-
-                // Construir la URL completa
-                UrlEnvio = urlBuilder.ToString();
+                Utilidades.GenerarURL();
             }
 
-            return resultado.ToString();
+            return resultado;
         }
 
-        private static void AsignaParametros(string clave, string valor)
+
+        public static void AsignaParametros(string clave, string valor)
         {
             switch(clave.ToLower())
             {
@@ -210,7 +207,7 @@ namespace FacturaQR
 
                 case "entorno":
                     // Define el entorno de pruebas o producción
-                    if(valor.ToLower() == "pruebas")
+                    if(string.Equals(valor, "pruebas", StringComparison.OrdinalIgnoreCase))
                     {
                         EntornoProduccion = false;
                     }
@@ -218,7 +215,7 @@ namespace FacturaQR
 
                 case "verifactu":
                     // Define si se usa el sistema VeriFactu
-                    if(valor.ToLower() == "si")
+                    if(string.Equals(valor, "si", StringComparison.OrdinalIgnoreCase))
                     {
                         VeriFactu = true;
                         TextoAbajo = "VERI*FACTU"; // Si es VeriFactu, se pone el texto abajo
@@ -303,31 +300,15 @@ namespace FacturaQR
                             AccionPDF = AccionesPDF.Abrir;
                             EjecutarAcciones = true;
                             break;
+
+                        case "visualizar":
+                            AccionPDF = AccionesPDF.Visualizar;
+                            PdfSalida = PdfEntrada;
+                            EjecutarAcciones = true;
+                            break;
                     }
                     break;
             }
-        }
-
-        // Establece la ruta para insertar el QR en funcion del entorno y si aplica Verifactu
-        private static string ObtenerUrl(bool produccion, bool verifactu)
-        {
-            string urlBase = produccion ? UrlProduccionBase : UrlPruebasBase;
-
-            if(verifactu)
-            {
-                return urlBase + "ValidarQR";
-            }
-            else
-            {
-                return urlBase + "ValidarQRNoVerifactu";
-            }
-        }
-
-        private static bool ColorValido(string colorHex)
-        {
-            return Regex.IsMatch(colorHex, @"^#(?:[0-9a-fA-F]{6})$");
-        }
+        }   
     }
-
-
 }

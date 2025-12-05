@@ -110,60 +110,8 @@ namespace FacturaQR
                 // Si se ha pasado el parametro de impresion, se lanza la impresion del PDF generado
                 if(Configuracion.EjecutarAcciones)
                 {
-                    // Ruta del ejecutable SumatraPDF 
-                    string rutaBase = AppDomain.CurrentDomain.BaseDirectory;
-                    string sumatraExe = Path.Combine(rutaBase, "SumatraPDF.exe");
-                    string rutaCache = Path.Combine(rutaBase, "sumatrapdfcache");
-
-                    // Borrado de la carpeta de cache antes de la ejecucion
-                    if(Directory.Exists(rutaCache))
-                    {
-                        Directory.Delete(rutaCache, true); 
-                    }
-
-                    // Controla si esta disponible el programa para evitar excepciones
-                    if(!File.Exists(sumatraExe))
-                    {
-                        throw new InvalidOperationException("No se pudo lanzar la impresion del PDF.");
-                    }
-
-                    // Crea un proceso para ejecutar el programa SumatraPDF
-                    var psi = new ProcessStartInfo();
-                    psi.FileName = sumatraExe;
-
-                    // Configura los parametros segun si se va a imprimir o a abrir el PDF
-                    switch(Configuracion.AccionPDF)
-                    {
-                        // Configura el proceso para lanzar la impresion silenciosa en la impresora predeterminada
-                        case Configuracion.AccionesPDF.Imprimir:
-                            psi.Arguments = $"-print-to-default -silent \"{rutaPdfSalida}\""; // Imprime el PDF en la impresora predeterminada
-                            psi.CreateNoWindow = true; // No crea ninguna ventana
-                            psi.WindowStyle = ProcessWindowStyle.Hidden; // El proceso esta oculto
-                            psi.UseShellExecute = false; // Ejecuta el proceso directamente sin usar la shell de windows
-                            break;
-
-                        case Configuracion.AccionesPDF.Abrir:
-                            string modoVista = "\"continuous single page\"";
-                            string zoom = "\"fit width\"";
-                            psi.Arguments = $"-view {modoVista} -zoom {zoom} \"{rutaPdfSalida}\""; // Abrir el PDF ajustado al ancho
-                            psi.CreateNoWindow = false; // No se oculta la ventana
-                            psi.WindowStyle = ProcessWindowStyle.Normal; // Estilo de la ventana del proceso
-                            psi.UseShellExecute = false; // Usa el shell de Windows para abrir SumatraPDF normalmente (ventana visible)
-                            break;
-                    }
-
-                    // Inicia el proceso de impresion
-                    using(var proceso = Process.Start(psi))
-                    {
-                        // Espera a que SumatraPDF termine
-                        proceso.WaitForExit();
-
-                        // Comprueba el código de salida
-                        if(proceso.ExitCode != 0)
-                        {
-                            throw new InvalidOperationException($"La impresión del PDF falló. Código de salida: {proceso.ExitCode}");
-                        }
-                    }
+                    // Lanza el metodo para imprimir, abrir o visualizar el PDF
+                    Utilidades.GestionarSalidaPDF();
                 }
             }
 
