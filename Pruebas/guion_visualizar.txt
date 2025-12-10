@@ -1,3 +1,4 @@
-pdfentrada=C:\Programacion\c#\FacturaQR\Pruebas\25_00001.pdf
+pdfentrada=d:\Programacion\c#\FacturaQR\Pruebas\25_00001.pdf
 
 accionpdf= visualizar
+ficherosalidas=d:\Programacion\c#\FacturaQR\Pruebas\salida.txt

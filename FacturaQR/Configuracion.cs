@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using PdfSharp.Internal;
 
 namespace FacturaQR
 {
@@ -60,13 +61,14 @@ namespace FacturaQR
             Ninguna,
             Imprimir,
             Abrir,
-            Visualizar
+            Visualizar,
+            CerrarVisor
         }
 
         public static AccionesPDF AccionPDF { get; private set; }
 
         // Controla si hay que realizar alguna accion con el PDF
-        public static bool EjecutarAcciones{ get; private set; } = false;
+        public static bool EjecutarAcciones { get; private set; } = false;
 
 
         public static string CargarParametros(string[] args)
@@ -96,7 +98,7 @@ namespace FacturaQR
                 {
                     continue;
                 }
-                    
+
                 string[] partes = linea
                     .Split(new char[] { '=' }, 2)
                     .Select(p => p.Trim())
@@ -112,6 +114,11 @@ namespace FacturaQR
 
         public static StringBuilder ValidarParametros(StringBuilder resultado)
         {
+            if(Configuracion.AccionPDF == AccionesPDF.CerrarVisor)
+            {
+                // Si la acción es cerrar el visor, no se validan más parámetros
+                return resultado;
+            }
             // Validar parámetros obligatorios
             if(string.IsNullOrEmpty(PdfEntrada))
             {
@@ -190,7 +197,6 @@ namespace FacturaQR
                     }
 
                     PdfSalida = Path.Combine(Program.RutaFicheros, Path.GetFileNameWithoutExtension(PdfEntrada) + "_salida.pdf"); // Se asigna un valor por defecto al PDF de salida
-                    FicheroSalida = Path.Combine(Program.RutaFicheros, "salida.txt");
 
                     break;
 
@@ -317,9 +323,18 @@ namespace FacturaQR
                             PdfSalida = PdfEntrada;
                             EjecutarAcciones = true;
                             break;
+
+                            case "cerrarvisor":
+                            AccionPDF = AccionesPDF.CerrarVisor;
+                            break;
                     }
                     break;
+
+                case "ficherosalida":
+                    FicheroSalida = valor;
+                    break;
+
             }
-        }   
+        }
     }
 }

@@ -20,6 +20,7 @@ Tambien puede usarse como visualizador de ficheros PDF.
 * v1.4.0.0 Incorporada la opcion para imprimir el PDF ademas de guardarlo en disco
 * v1.5.0.0 Incorporada la opcion para abrir el PDF en el visor SumatraPDF
 * v1.6.0.0 Incorporada la opcion para visualizar cualquier PDF que se pase por parametro (sin utilizar la insercion del QR)
+* v1.7.0.0 Incorporada la opcion para cerrar los procesos abiertos del visor SumatraPDF
 <br><br>
 
 
@@ -45,7 +46,8 @@ FacturaQR.exe ds123456 guion.txt
 * ancho=ancho del QR en milimetros (el alto sera el mismo); opcional
 * color=Color del QR en formato hexadecimal; opcional
 * marcaagua=Texto para insertar una marca de agua en el documento; opcional
-* accionpdf=[imprimir | abrir | visualizar]; Acciones adicionales a realizar con el PDF; opcional
+* accionpdf=[imprimir | abrir | visualizar | cerrarvisor]; Acciones adicionales a realizar con el PDF; opcional
+* ficherosalida=nombre del fichero para controlar la finalizacion del proceso (si se omite finaliza la aplicacion sin esperar)
 
 <br>
 
@@ -68,6 +70,9 @@ FacturaQR.exe ds123456 guion.txt
 	- 'abrir' = Abre el PDF generado con el visor
 	- 'imprimir' = Lanza el PDF generado por la impresora predeterminada
 	- 'visualizar' = Abre el PDF pasado por parametro con el visor, omitiendo el proceso de insertar el QR en el PDF
+	- 'cerrarvisor' = Cierra todos los procesos abiertos del visor SumatraPDF. Con este parametro no es necesario pasar ninguno mas
+* Si se incluye el parametro 'ficherosalida' la aplicacion espera a cerrar la ventana y genera ese fichero para controlar que ha terminado. 
+  Si se omite no se para la ejecucion
 * En la ruta de ejecucion deben estar los siguientes ficheros:
 	- PdfSharp.dll
 	- QRCoder.dll

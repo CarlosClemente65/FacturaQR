@@ -27,6 +27,10 @@ namespace FacturaQR
                         }
                         Utilidades.GestionarSalidaPDF();
                     }
+                    else if (Configuracion.AccionPDF == Configuracion.AccionesPDF.CerrarVisor)
+                    {
+                        Utilidades.CerrarVisor();
+                    }
                     else
                     {
                         resultado += InsertaQR.InsertarQR();

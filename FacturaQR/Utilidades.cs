@@ -75,7 +75,7 @@ namespace FacturaQR
                 psi.FileName = sumatraExe;
                 psi.WorkingDirectory = Path.GetDirectoryName(sumatraExe);
 
-                // Configura los parametros segun si se va a imprimir, abrir o visualizar el PDF
+                //Configura los parametros segun si se va a imprimir, abrir o visualizar el PDF
                 switch(accionPDF)
                 {
                     // Configura el proceso para lanzar la impresion silenciosa en la impresora predeterminada
@@ -100,28 +100,41 @@ namespace FacturaQR
                 // Inicia el proceso de impresion
                 using(var proceso = Process.Start(psi))
                 {
-                    // Espera a que SumatraPDF termine
-                    proceso.WaitForExit();
-                    // Solo espera en modo imprimir
-                    if(accionPDF == Configuracion.AccionesPDF.Imprimir)
+                    // Solo espera a que termine si es una impresion o si se ha indicado fichero de salida
+                    if(accionPDF == Configuracion.AccionesPDF.Imprimir || Configuracion.FicheroSalida != null)
                     {
+                        proceso.WaitForExit();
 
                         // Comprueba el código de salida
                         if(proceso.ExitCode != 0)
                         {
                             throw new InvalidOperationException($"La impresión del PDF falló. Código de salida: {proceso.ExitCode}");
                         }
+                        // Genera el fichero de control de salida una vez termine la ejecucion
+                        File.WriteAllText(Configuracion.FicheroSalida, "OK");
                     }
                 }
-                // Genera el fichero de control de salida una vez termine la ejecucion
-                string salida = "OK";
-                File.WriteAllText(Configuracion.FicheroSalida, salida);
 
             }
-
             catch(Exception ex)
             {
                 throw new InvalidOperationException($"Se ha producido un error con el visualizador del PDF. Mensaje: {ex.Message}");
+            }
+        }
+
+        public static void CerrarVisor()
+        {
+            var listaProcesos = Process.GetProcessesByName("SumatraPDF");
+            foreach(var proc in listaProcesos)
+            {
+                // Cierre normal del proceso
+                proc.CloseMainWindow();
+
+                // Forzar cierre si sigue activo
+                if(!proc.WaitForExit(2000))
+                {
+                    proc.Kill();
+                }
             }
         }
     }
