@@ -1,2 +1,3 @@
 pdfentrada=C:\Programacion\c#\FacturaQR\Pruebas\25_00001.pdf
-accionpdf=visualizar
+
+accionpdf= visualizar

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -10,6 +11,8 @@ namespace FacturaQR
         public static string PdfEntrada { get; private set; }
         public static string PdfSalida { get; private set; }
         public static string RutaFicheros { get; private set; } = Program.RutaFicheros;
+
+        public static string FicheroSalida { get; set; } // Fichero de control para gestionar la visualizacion de los PDF y saber cuando termina el programa.
 
         // Datos para el texto del QR
         public static bool? UsarQrExterno = null; // Indica si se usa un fichero de QR externo
@@ -89,8 +92,15 @@ namespace FacturaQR
             // Leer el archivo de guion y asignar los parámetros
             foreach(string linea in File.ReadAllLines(guion))
             {
-                if(string.IsNullOrWhiteSpace(linea)) ;
-                string[] partes = linea.Split(new char[] { '=' }, 2);
+                if(string.IsNullOrWhiteSpace(linea))
+                {
+                    continue;
+                }
+                    
+                string[] partes = linea
+                    .Split(new char[] { '=' }, 2)
+                    .Select(p => p.Trim())
+                    .ToArray();
                 if(partes.Length == 2)
                 {
                     AsignaParametros(partes[0], partes[1]);
@@ -180,6 +190,7 @@ namespace FacturaQR
                     }
 
                     PdfSalida = Path.Combine(Program.RutaFicheros, Path.GetFileNameWithoutExtension(PdfEntrada) + "_salida.pdf"); // Se asigna un valor por defecto al PDF de salida
+                    FicheroSalida = Path.Combine(Program.RutaFicheros, "salida.txt");
 
                     break;
 

@@ -20,6 +20,11 @@ namespace FacturaQR
                 {
                     if (Configuracion.AccionPDF == Configuracion.AccionesPDF.Visualizar)
                     {
+                        // Revisa si existe el fichero de control de la salida para borrarlo antes
+                        if(File.Exists(Configuracion.FicheroSalida))
+                        {
+                            File.Delete(Configuracion.FicheroSalida);
+                        }
                         Utilidades.GestionarSalidaPDF();
                     }
                     else

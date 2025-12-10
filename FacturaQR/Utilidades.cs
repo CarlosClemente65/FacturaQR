@@ -73,6 +73,7 @@ namespace FacturaQR
                 // Crea un proceso para ejecutar el programa SumatraPDF
                 var psi = new ProcessStartInfo();
                 psi.FileName = sumatraExe;
+                psi.WorkingDirectory = Path.GetDirectoryName(sumatraExe);
 
                 // Configura los parametros segun si se va a imprimir, abrir o visualizar el PDF
                 switch(accionPDF)
@@ -90,9 +91,9 @@ namespace FacturaQR
                         string modoVista = "\"continuous single page\"";
                         string zoom = "\"fit width\"";
                         psi.Arguments = $"-view {modoVista} -zoom {zoom} \"{ficheroPDF}\""; // Abrir el PDF ajustado al ancho
-                        psi.CreateNoWindow = false; // No se oculta la ventana
+                        psi.CreateNoWindow = false;
                         psi.WindowStyle = ProcessWindowStyle.Normal; // Estilo de la ventana del proceso
-                        psi.UseShellExecute = false; // Usa el shell de Windows para abrir SumatraPDF normalmente (ventana visible)
+                        psi.UseShellExecute = true; // Usa el shell de Windows para abrir SumatraPDF normalmente (ventana visible)
                         break;
                 }
 
@@ -101,13 +102,21 @@ namespace FacturaQR
                 {
                     // Espera a que SumatraPDF termine
                     proceso.WaitForExit();
-
-                    // Comprueba el código de salida
-                    if(proceso.ExitCode != 0)
+                    // Solo espera en modo imprimir
+                    if(accionPDF == Configuracion.AccionesPDF.Imprimir)
                     {
-                        throw new InvalidOperationException($"La impresión del PDF falló. Código de salida: {proceso.ExitCode}");
+
+                        // Comprueba el código de salida
+                        if(proceso.ExitCode != 0)
+                        {
+                            throw new InvalidOperationException($"La impresión del PDF falló. Código de salida: {proceso.ExitCode}");
+                        }
                     }
                 }
+                // Genera el fichero de control de salida una vez termine la ejecucion
+                string salida = "OK";
+                File.WriteAllText(Configuracion.FicheroSalida, salida);
+
             }
 
             catch(Exception ex)
