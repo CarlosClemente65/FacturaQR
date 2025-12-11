@@ -2,60 +2,62 @@
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
-using PdfSharp.Internal;
 
 namespace FacturaQR
 {
     public static class Configuracion
     {
+        // Rutas de los ficheros
         public static string PdfEntrada { get; private set; }
         public static string PdfSalida { get; set; }
         public static string RutaFicheros { get; private set; } = Directory.GetCurrentDirectory();
+        public static string FicheroSalida { get; set; } // Fichero de control para gestionar cuando termina el programa.
 
-        public static string FicheroSalida { get; set; } // Fichero de control para gestionar la visualizacion de los PDF y saber cuando termina el programa.
 
-        // Datos para el texto del QR
+        // Datos de control para generar el QR
         public static bool? UsarQrExterno = false; // Indica si se usa un fichero de QR externo
         public static bool? InsertarQR = false; // Control para incluir o no el QR en el PDF
 
-        // Nombre del fichero del QR
+
+        // Datos para generar el QR
         public static string NombreFicheroQR { get; private set; }
 
-        // Base de la URL del QR
+        // Datos base de la URL para generar el QR
         public static string UrlPruebasBase { get; set; } = @"https://prewww2.aeat.es/wlpl/TIKE-CONT/";
         public static string UrlProduccionBase { get; set; } = @"https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/";
         public static string UrlEnvio { get; set; } // URL completa con parámetros
 
-        // Define si se usa el entorno de pruebas o producción y si se usa VeriFactu o no
-        public static bool EntornoProduccion { get; set; } = true; // Defecto entorno producción
-        public static bool VeriFactu { get; private set; } = false; // Defecto sistema VeriFactu
 
-        // Datos de la factura
+        // Datos de control para utilizar el entorno de pruebas o producción y el uso de VeriFactu
+        public static bool EntornoProduccion { get; set; } = true; // Defecto entorno producción
+        public static bool VeriFactu { get; private set; } = false; // Defecto sistema no VeriFactu
+
+
+        // Datos de la factura que se insertarán en el QR
         public static string NifEmisor { get; set; }
         public static string NumeroFactura { get; set; }
         public static DateTime FechaFactura { get; set; }
         public static decimal TotalFactura { get; set; }
 
-        // Texto adiconal del QR
+
+        // Texto adiconal a insertar en el QR
         public static string TextoArriba { get; private set; } = "QR Tributario";
         public static string TextoAbajo { get; private set; } = "";
 
-        // Posición del QR
+
+        // Posición tamaño y color del QR
         public static double PosX { get; private set; } = 10;
         public static double PosY { get; private set; } = 10;
-
-        // Tamaño del QR
         public static double Ancho { get; private set; } = 30;
         public static double Alto { get; private set; } = 30;
-
-        // Color del QR
         public static string ColorQR { get; private set; } = "#000000"; // Por defecto negro
 
-        // Marca de agua
+
+        // Texto de la marca de agua
         public static string MarcaAgua { get; private set; }
 
-        // Acciones a realizar con el PDF
+
+        // Lista de acciones adicionales a realizar con el PDF
         public enum AccionesPDF
         {
             Ninguna,
@@ -64,18 +66,25 @@ namespace FacturaQR
             Visualizar
         }
 
+
+        // Acción a realizar con el PDF
         public static AccionesPDF AccionPDF { get; private set; }
+
 
         // Controla si hay que realizar alguna accion con el PDF
         public static bool EjecutarAcciones { get; set; } = false;
 
-        // Controla si hay que cerrar el visor
+
+        // Control para cerrar el visor
         public static bool CerrarVisor {get; set;} = false;
 
 
+        // Carga los parámetros desde el archivo de guion
         public static StringBuilder CargarParametros(string[] args)
         {
             StringBuilder resultado = new StringBuilder();
+
+            // Validar los parámetros de entrada
             if(args.Length < 2)
             {
                 resultado.AppendLine("Parámetros insuficientes.");
@@ -86,6 +95,7 @@ namespace FacturaQR
                 return resultado;
             }
 
+            // Asignar el archivo de guion
             string guion = args[1];
 
             if(!File.Exists(guion))
@@ -93,21 +103,23 @@ namespace FacturaQR
                 resultado.AppendLine("El archivo de guion no existe.");
             }
 
+
             // Leer el archivo de guion y asignar los parámetros
             foreach(string linea in File.ReadAllLines(guion))
             {
+                // Salta las lineas vacias
                 if(string.IsNullOrWhiteSpace(linea))
                 {
                     continue;
                 }
 
-                // Divide en dos partes las lineas del guion
+                // Separa las lineas del guion en clave y valor
                 string[] partes = linea
                     .Split(new char[] { '=' }, 2)
                     .Select(p => p.Trim())
                     .ToArray();
 
-                // Chequea que tenga dos partes (clave y valor)
+                // Chequea que tenga dos partes (clave y valor) antes de asignar los parametros
                 if(partes.Length == 2)
                 {
                     AsignaParametros(partes[0], partes[1]);
@@ -122,6 +134,8 @@ namespace FacturaQR
             return resultado;
         }
 
+
+        // Asigna los parámetros según la clave y valor proporcionados
         public static void AsignaParametros(string clave, string valor)
         {
             switch(clave.ToLower())
@@ -137,7 +151,7 @@ namespace FacturaQR
                     break;
 
                 case "pdfsalida":
-                    // Chequea si se ha pasado un valor para el PDF de salida
+                    // Asigna el PDF de salida eliminando las comillas si las tiene
                     if(!string.IsNullOrEmpty(valor))
                     {
                         PdfSalida = Path.GetFullPath(valor.Trim('"'));
@@ -243,7 +257,7 @@ namespace FacturaQR
                     break;
 
                 case "accionpdf":
-                    // Define distintas acciones a realizar con el visor SumatraPDF que permite imprimir el PDF, abrirlo, visualizarlo o cerrar el programa
+                    // Define distintas acciones a realizar con el visor SumatraPDF que permite imprimir, abrir o visualizar el PDF
                     switch(valor.ToLower())
                     {
                         case "imprimir":
@@ -276,6 +290,8 @@ namespace FacturaQR
             }
         }
 
+
+        // Valida los parámetros cargados y devuelve los errores encontrados
         public static StringBuilder ValidarParametros(StringBuilder resultado)
         {
             // Validar parámetros obligatorios
@@ -292,7 +308,7 @@ namespace FacturaQR
             // Chequea si se no ha pasado un fichero QR externo para validar los parametros necesarios para generarlo
             if(UsarQrExterno == false)
             {
-                // Genera la URL de envío del QR si no se ha pasado segun el resto de parametros (por defecto entorno producción y no VeriFactu)
+                // Genera la URL de envío del QR si no se ha pasado segun el resto de parametros 
                 if(string.IsNullOrEmpty(UrlEnvio))
                 {
                     UrlEnvio = Utilidades.ObtenerUrl(EntornoProduccion, VeriFactu);
@@ -338,7 +354,5 @@ namespace FacturaQR
 
             return resultado;
         }
-
-
     }
 }

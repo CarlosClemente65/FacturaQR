@@ -50,6 +50,7 @@ namespace FacturaQR
             return Regex.IsMatch(colorHex, @"^#(?:[0-9a-fA-F]{6})$");
         }
 
+        // Genera la URL con los parámetros del QR UTF-8
         public static void GenerarURL()
         {
             // Genera la URL con los parámetros del QR UTF-8
@@ -64,9 +65,12 @@ namespace FacturaQR
             Configuracion.UrlEnvio = urlBuilder.ToString();
         }
 
+        // Gestiona las acciones de abrir, imprimir o visualizar el PDF con SumatraPDF
         public static void GestionarAcciones()
         {
             var accionPDF = Configuracion.AccionPDF;
+
+            // Si no se ha indicado el PDF de salida, se usa el de entrada
             var ficheroPDF = string.IsNullOrWhiteSpace(Configuracion.PdfSalida)
                 ? Configuracion.PdfEntrada
                 : Configuracion.PdfSalida;
@@ -109,12 +113,12 @@ namespace FacturaQR
 
                     case Configuracion.AccionesPDF.Abrir:
                     case Configuracion.AccionesPDF.Visualizar:
-                        psi.Arguments = $"{ficheroPDF}"; // Abrir el PDF
-                        psi.CreateNoWindow = false;
+                        psi.Arguments = $"{ficheroPDF}"; // Fichero PDF para abrir o visualizar
+                        psi.CreateNoWindow = false; // Se crea la ventana del proceso
                         psi.WindowStyle = ProcessWindowStyle.Normal; // Estilo de la ventana del proceso
                         psi.UseShellExecute = true; // Usa el shell de Windows para abrir SumatraPDF normalmente (ventana visible)
 
-                        // En el modo de visualizar se cierra el visor sin espera
+                        // En la accion de visualizar no se espera a cerrar el visor
                         if(accionPDF == Configuracion.AccionesPDF.Visualizar)
                         {
                             espera = false;
@@ -124,7 +128,7 @@ namespace FacturaQR
 
                 }
 
-                // Inicia el proceso de impresion
+                // Inicia el proceso configurado
                 using(var proceso = Process.Start(psi))
                 {
                     if(espera)
@@ -146,6 +150,7 @@ namespace FacturaQR
             }
         }
 
+        // Cierra todas las instancias del visor SumatraPDF que esten abiertas
         public static void CerrarVisor()
         {
             var listaProcesos = Process.GetProcessesByName("SumatraPDF");
@@ -156,6 +161,7 @@ namespace FacturaQR
             }
         }
 
+        // Inserta una marca de agua en la pagina PDF indicada
         public static PdfPage InsertaMarcaAgua(PdfPage pagina, XGraphics gfx, string marcaAgua)
         {
             try
@@ -164,12 +170,12 @@ namespace FacturaQR
                 XFont fuenteMarca = new XFont("Arial", 20, XFontStyle.BoldItalic);
                 XBrush pincelMarca = new XSolidBrush(XColor.FromArgb(0, 225, 225, 225)); // Gris muy claro (el primer cero es la transparencia pero no se puede aplicar a un PDF)
 
-                // Ajuste en varias lineas si es necesario
+                // Ajusta el texto en varias lineas si es necesario
                 List<string> lineas = new List<string>();
                 string[] bloques = marcaAgua.Split(new string[] { "\n" }, StringSplitOptions.None);
                 string linea = "";
 
-                // Se define un cuadrado seguro de 210x210 mm para insertar la marca
+                // Se define un cuadrado seguro de 210x210 mm para insertar la marca de agua
                 double margenMm = 10;
                 double margen = XUnit.FromMillimeter(margenMm).Point;
                 double ladoCuadradoMm = 210;

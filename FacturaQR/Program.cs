@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Text;
 using PdfSharp.Drawing;
@@ -13,6 +12,7 @@ namespace FacturaQR
         {
             // Objeto para almacenar el resutlado de las operaciones
             StringBuilder resultado = new StringBuilder();
+
             // Objeto con el documento para insertar las imagenes
             PdfDocument documento = new PdfDocument();
 
@@ -27,11 +27,13 @@ namespace FacturaQR
                 // Cargar configuración
                 resultado = Configuracion.CargarParametros(args);
 
-                if (Configuracion.CerrarVisor)
+                // Si se ha solicitado cerrar el visor, se cierra antes de iniciar el proceso
+                if(Configuracion.CerrarVisor)
                 {
                     Utilidades.CerrarVisor();
                 }
 
+                // Si no hay errores, se continua con el proceso
                 if(resultado.Length == 0)
                 {
                     // Valida parametros obligatorios en caso de que haya que añadir el QR
@@ -48,13 +50,13 @@ namespace FacturaQR
                                 Configuracion.PdfSalida = Path.Combine(Configuracion.RutaFicheros, Path.GetFileNameWithoutExtension(Configuracion.PdfEntrada) + "_salida.pdf");
                             }
 
-                            // Carga en el documento el PDF de entrada
+                            // Carga el documento con el PDF de entrada
                             documento = Utilidades.Generardocumento(Configuracion.PdfEntrada);
 
-                            // Asigna la pagina 1 para insertar el QR y las imagenes
+                            // Establece la pagina 1 para insertar el QR y las imagenes
                             pagina = documento.Pages[0];
 
-                            // Asigna el recuadro a la pagina
+                            // Añade el recuadro a la pagina
                             gfx = XGraphics.FromPdfPage(pagina);
 
                             // Proceso para insertar el QR en el documento
@@ -69,16 +71,16 @@ namespace FacturaQR
                     }
                     else
                     {
-                        // Si no hay que insertar el QR es posible que se deba insertar la marca de agua
+                        // Si no hay que insertar el QR se revisa si hay que añadir la marca de agua
                         if(!string.IsNullOrEmpty(Configuracion.MarcaAgua))
                         {
                             // Carga en el documento el PDF de entrada
                             documento = Utilidades.Generardocumento(Configuracion.PdfEntrada);
 
-                            // Asigna la pagina 1 para insertar el QR y las imagenes
+                            // Establece la pagina 1 para insertar el QR y las imagenes
                             pagina = documento.Pages[0];
 
-                            // Asigna el recuadro a la pagina
+                            // añade el recuadro a la pagina
                             gfx = XGraphics.FromPdfPage(pagina);
 
                             // Inserta la marca de agua en el PDF
@@ -95,13 +97,15 @@ namespace FacturaQR
                         }
                     }
 
+                    // Revisa si hay que ejecutar acciones adicionales
                     if(Configuracion.EjecutarAcciones)
                     {
                         // Ejecuta las acciones adicionales que se hayan solicitado
                         Utilidades.GestionarAcciones();
                     }
 
-                    if (Configuracion.FicheroSalida != null)
+                    // Si se ha especificado un fichero de salida, se genera el fichero de control
+                    if(Configuracion.FicheroSalida != null)
                     {
                         // Genera el fichero de control de salida una vez termine la ejecucion
                         File.WriteAllText(Configuracion.FicheroSalida, "OK");

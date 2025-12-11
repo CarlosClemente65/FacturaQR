@@ -1,14 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
-using System.IO;
 using System.Text;
-using System.Windows;
-using System.Windows.Documents;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
-using PdfSharp.Pdf.IO;
 using QRCoder;
 
 namespace FacturaQR
@@ -90,7 +84,9 @@ namespace FacturaQR
 
         private static XImage GenerarQR(string textoQr)
         {
+            // Objeto para almacenar el código QR generado
             XImage qrGenerado;
+
             // Carga o genera el código QR
             if(Configuracion.UsarQrExterno == true)
             {
@@ -99,7 +95,7 @@ namespace FacturaQR
             }
             else
             {
-                // Si no, se genera el código QR a partir del texto proporcionado
+                // En otro caso se genera el código QR a partir del texto proporcionado
                 using(QRCodeGenerator qrGenerator = new QRCodeGenerator())
                 using(QRCodeData qrCodeData = qrGenerator.CreateQrCode(textoQr, QRCodeGenerator.ECCLevel.Q))
                 using(QRCode qrCode = new QRCode(qrCodeData))
