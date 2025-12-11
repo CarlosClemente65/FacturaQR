@@ -47,12 +47,21 @@ namespace FacturaQR
             Configuracion.UrlEnvio = urlBuilder.ToString();
         }
 
-        public static void GestionarSalidaPDF()
+        public static void GestionarAcciones()
         {
             var accionPDF = Configuracion.AccionPDF;
-            var ficheroPDF = Configuracion.PdfSalida;
+            var ficheroPDF = string.IsNullOrWhiteSpace(Configuracion.PdfSalida)
+                ? Configuracion.PdfEntrada
+                : Configuracion.PdfSalida;
             try
             {
+                if (accionPDF == Configuracion.AccionesPDF.CerrarVisor)
+                {
+                    CerrarVisor();
+                    return; // Si la accion es cerrar el visor, no hay que ejecutar nada mas
+                }
+
+
                 // Ruta del ejecutable SumatraPDF 
                 string rutaBase = AppDomain.CurrentDomain.BaseDirectory;
                 string sumatraExe = Path.Combine(rutaBase, "SumatraPDF.exe");
@@ -75,6 +84,8 @@ namespace FacturaQR
                 psi.FileName = sumatraExe;
                 psi.WorkingDirectory = Path.GetDirectoryName(sumatraExe);
 
+                bool espera = true; // Indica si hay que esperar al cierre del visor
+
                 //Configura los parametros segun si se va a imprimir, abrir o visualizar el PDF
                 switch(accionPDF)
                 {
@@ -88,20 +99,25 @@ namespace FacturaQR
 
                     case Configuracion.AccionesPDF.Abrir:
                     case Configuracion.AccionesPDF.Visualizar:
-                        string modoVista = "\"continuous single page\"";
-                        string zoom = "\"fit width\"";
-                        psi.Arguments = $"-view {modoVista} -zoom {zoom} \"{ficheroPDF}\""; // Abrir el PDF ajustado al ancho
+                        psi.Arguments = $"{ficheroPDF}"; // Abrir el PDF
                         psi.CreateNoWindow = false;
                         psi.WindowStyle = ProcessWindowStyle.Normal; // Estilo de la ventana del proceso
                         psi.UseShellExecute = true; // Usa el shell de Windows para abrir SumatraPDF normalmente (ventana visible)
+
+                        // En el modo de visualizar se cierra el visor sin espera
+                        if(accionPDF == Configuracion.AccionesPDF.Visualizar)
+                        {
+                            espera = false; 
+                        }
+
                         break;
+
                 }
 
                 // Inicia el proceso de impresion
                 using(var proceso = Process.Start(psi))
                 {
-                    // Solo espera a que termine si es una impresion o si se ha indicado fichero de salida
-                    if(accionPDF == Configuracion.AccionesPDF.Imprimir || Configuracion.FicheroSalida != null)
+                    if(espera)
                     {
                         proceso.WaitForExit();
 
@@ -110,6 +126,10 @@ namespace FacturaQR
                         {
                             throw new InvalidOperationException($"La impresión del PDF falló. Código de salida: {proceso.ExitCode}");
                         }
+                    }
+
+                    if(Configuracion.FicheroSalida != null)
+                    {
                         // Genera el fichero de control de salida una vez termine la ejecucion
                         File.WriteAllText(Configuracion.FicheroSalida, "OK");
                     }

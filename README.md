@@ -47,7 +47,7 @@ FacturaQR.exe ds123456 guion.txt
 * color=Color del QR en formato hexadecimal; opcional
 * marcaagua=Texto para insertar una marca de agua en el documento; opcional
 * accionpdf=[imprimir | abrir | visualizar | cerrarvisor]; Acciones adicionales a realizar con el PDF; opcional
-* ficherosalida=nombre del fichero para controlar la finalizacion del proceso (si se omite finaliza la aplicacion sin esperar)
+* ficherosalida=nombre del fichero para controlar la finalizacion del proceso
 
 <br>
 
@@ -67,14 +67,17 @@ FacturaQR.exe ds123456 guion.txt
 * El texto de la marca de agua admite saltos de linea añadiendo '\n' en la posicion donde insertarlo
 * Si se produce algun error por algun parametro que falte o no sea correcto, se genera el fichero "errores.txt" con el detalle
 * El parametro 'accionpdf= permite realizar acciones adicionales con el PDF utilizando el programa SumatraPDF
-	- 'abrir' = Abre el PDF generado con el visor
+	- 'abrir' = Abre el PDF generado con el visor; la aplicacion espera a que se cierre el visor para continuar
 	- 'imprimir' = Lanza el PDF generado por la impresora predeterminada
-	- 'visualizar' = Abre el PDF pasado por parametro con el visor, omitiendo el proceso de insertar el QR en el PDF
-	- 'cerrarvisor' = Cierra todos los procesos abiertos del visor SumatraPDF. Con este parametro no es necesario pasar ninguno mas
-* Si se incluye el parametro 'ficherosalida' la aplicacion espera a cerrar la ventana y genera ese fichero para controlar que ha terminado. 
-  Si se omite no se para la ejecucion
+	- 'visualizar' = Abre el PDF pasado por parametro con el visor; la aplicacion continua sin esperar al cierre del visor
+	- 'cerrarvisor' = Cierra todos los procesos abiertos del visor SumatraPDF; no es necesario pasar ningun parametro mas
+* Si se incluye el parametro 'ficherosalida' la aplicacion genera un fichero que puede usarse para controlar si la aplicacion ha terminado o no. 
+  Con el parametro 'visualizar' la aplicacion no se detiene aunque no se cierre el visor, por lo que se generara (si se ha indicado) el fichero de salida
 * En la ruta de ejecucion deben estar los siguientes ficheros:
 	- PdfSharp.dll
 	- QRCoder.dll
 	- SumatraPDF.exe (necesario si se utiliza la opcion de impresion)
+* El fichero 'Configuracion_visor.txt' es una copia modificada con los parametros del visor, 
+  Para usarla debe renombrarse como "SumatraPDF-settings.txt" y ubicarla en la misma ruta que el visor SumatraPDF.
+
 

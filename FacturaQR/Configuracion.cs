@@ -11,13 +11,13 @@ namespace FacturaQR
     {
         public static string PdfEntrada { get; private set; }
         public static string PdfSalida { get; private set; }
-        public static string RutaFicheros { get; private set; } = Program.RutaFicheros;
+        public static string RutaFicheros { get; private set; } = Directory.GetCurrentDirectory();
 
         public static string FicheroSalida { get; set; } // Fichero de control para gestionar la visualizacion de los PDF y saber cuando termina el programa.
 
         // Datos para el texto del QR
-        public static bool? UsarQrExterno = null; // Indica si se usa un fichero de QR externo
-        public static bool? QRValido = null; // Control para incluir o no el QR en el PDF
+        public static bool? UsarQrExterno = false; // Indica si se usa un fichero de QR externo
+        public static bool? InsertarQR = false; // Control para incluir o no el QR en el PDF
 
         // Nombre del fichero del QR
         public static string NombreFicheroQR { get; private set; }
@@ -68,10 +68,10 @@ namespace FacturaQR
         public static AccionesPDF AccionPDF { get; private set; }
 
         // Controla si hay que realizar alguna accion con el PDF
-        public static bool EjecutarAcciones { get; private set; } = false;
+        //public static bool EjecutarAcciones { get; private set; } = false;
 
 
-        public static string CargarParametros(string[] args)
+        public static StringBuilder CargarParametros(string[] args)
         {
             StringBuilder resultado = new StringBuilder();
             if(args.Length < 2)
@@ -81,7 +81,7 @@ namespace FacturaQR
             if(args[0] != "ds123456")
             {
                 resultado.AppendLine("Clave de inicio incorrecta.");
-                return resultado.ToString();
+                return resultado;
             }
 
             string guion = args[1];
@@ -109,79 +109,8 @@ namespace FacturaQR
                 }
             }
 
-            return ValidarParametros(resultado).ToString();
-        }
-
-        public static StringBuilder ValidarParametros(StringBuilder resultado)
-        {
-            if(Configuracion.AccionPDF == AccionesPDF.CerrarVisor)
-            {
-                // Si la acción es cerrar el visor, no se validan más parámetros
-                return resultado;
-            }
-            // Validar parámetros obligatorios
-            if(string.IsNullOrEmpty(PdfEntrada))
-            {
-                resultado.AppendLine("El parámetro 'pdfEntrada' es obligatorio.");
-            }
-
-            if(!File.Exists(PdfEntrada))
-            {
-                resultado.AppendLine("El PDF de entrada no existe.");
-            }
-
-            // Chequea si se ha pasado un fichero QR externo
-            if(UsarQrExterno == true)
-            {
-                // Chequea que el fichero del QR existe
-                if(!File.Exists(NombreFicheroQR))
-                {
-                    resultado.AppendLine("El fichero del código QR no existe.");
-                }
-
-                // No se genera el QR si se pasa un fichero externo
-                QRValido = false;
-            }
-
-            // Si se ha pasado el NIF del emisor (QRValido = true), se valida el resto de parámetros para generar el QR
-            if(QRValido == true)
-            {
-                // Genera la URL de envío del QR si no se ha pasado segun el resto de parametros (por defecto entorno producción y no VeriFactu)
-                if(string.IsNullOrEmpty(UrlEnvio))
-                {
-                    UrlEnvio = Utilidades.ObtenerUrl(EntornoProduccion, VeriFactu);
-                }
-
-                // Valida que se haya pasado el numero de factura
-                if(string.IsNullOrEmpty(NumeroFactura))
-                {
-                    resultado.AppendLine("El parámetro 'numeroFactura' es obligatorio.");
-                }
-
-                // Valida que se haya pasado la fecha de la factura
-                if(FechaFactura == DateTime.MinValue)
-                {
-                    resultado.AppendLine("El parámetro 'fechaFactura' es obligatorio.");
-                }
-
-                // Valida que se haya pasado el total de la factura
-                if(TotalFactura == 0)
-                {
-                    resultado.AppendLine("El parámetro 'totalFactura' es obligatorio.");
-                }
-
-                // Valida si el color pasado es valido
-                if(!Utilidades.ColorValido(ColorQR))
-                {
-                    resultado.AppendLine("El codigo de color del QR no es valido");
-                }
-
-                Utilidades.GenerarURL();
-            }
-
             return resultado;
         }
-
 
         public static void AsignaParametros(string clave, string valor)
         {
@@ -193,11 +122,8 @@ namespace FacturaQR
                     // Chequea si el fichero existe para asignar la ruta de ficheros
                     if(File.Exists(PdfEntrada))
                     {
-                        Program.RutaFicheros = Path.GetDirectoryName(PdfEntrada);
+                        RutaFicheros = Path.GetDirectoryName(PdfEntrada);
                     }
-
-                    PdfSalida = Path.Combine(Program.RutaFicheros, Path.GetFileNameWithoutExtension(PdfEntrada) + "_salida.pdf"); // Se asigna un valor por defecto al PDF de salida
-
                     break;
 
                 case "pdfsalida":
@@ -211,6 +137,7 @@ namespace FacturaQR
                 case "url":
                     // Si se pasa la URL, se usa esa directamente
                     UrlEnvio = valor;
+                    InsertarQR = true; // Al pasar la url hay que insertar el QR en el PDF
                     break;
 
                 case "ficheroqr":
@@ -219,6 +146,7 @@ namespace FacturaQR
                     {
                         NombreFicheroQR = Path.GetFullPath(valor.Trim('"'));
                         UsarQrExterno = true; // Se indica que se usará un fichero externo
+                        InsertarQR = true; // Si se pasa un fichero con el QR hay que insertarlo en el PDF
                     }
                     break;
 
@@ -245,7 +173,7 @@ namespace FacturaQR
                     if(!string.IsNullOrEmpty(NifEmisor))
                     {
                         // Si se ha pasado el NIF del emisor, se insertara el QR
-                        QRValido = true;
+                        InsertarQR = true;
                     }
                     break;
 
@@ -305,36 +233,103 @@ namespace FacturaQR
                     break;
 
                 case "accionpdf":
-                    // Define si se imprime a la impresora predeterminada o se muestra el PDF en el visor de SumatraPDF
+                    // Define distintas acciones a realizar con el visor SumatraPDF que permite imprimir el PDF, abrirlo, visualizarlo o cerrar el programa
                     switch(valor.ToLower())
                     {
                         case "imprimir":
                             AccionPDF = AccionesPDF.Imprimir;
-                            EjecutarAcciones = true;
                             break;
 
                         case "abrir":
                             AccionPDF = AccionesPDF.Abrir;
-                            EjecutarAcciones = true;
                             break;
 
                         case "visualizar":
                             AccionPDF = AccionesPDF.Visualizar;
-                            PdfSalida = PdfEntrada;
-                            EjecutarAcciones = true;
                             break;
 
-                            case "cerrarvisor":
+                        case "cerrarvisor":
                             AccionPDF = AccionesPDF.CerrarVisor;
+                            InsertarQR = false;
                             break;
                     }
                     break;
 
                 case "ficherosalida":
+                    // Fichero para controlar si se ha terminado el proceso
                     FicheroSalida = valor;
+                    // Revisa si existe el fichero para borrarlo antes
+                    if(File.Exists(Configuracion.FicheroSalida))
+                    {
+                        File.Delete(Configuracion.FicheroSalida);
+                    }
                     break;
-
             }
         }
+
+        public static StringBuilder ValidarParametros(StringBuilder resultado)
+        {
+            // Validar parámetros obligatorios
+            if(string.IsNullOrEmpty(PdfEntrada))
+            {
+                resultado.AppendLine("El parámetro 'pdfEntrada' es obligatorio.");
+            }
+
+            if(!File.Exists(PdfEntrada))
+            {
+                resultado.AppendLine("El PDF de entrada no existe.");
+            }
+
+            // Chequea si se no ha pasado un fichero QR externo para validar los parametros necesarios para generarlo
+            if(UsarQrExterno == false)
+            {
+                // Genera la URL de envío del QR si no se ha pasado segun el resto de parametros (por defecto entorno producción y no VeriFactu)
+                if(string.IsNullOrEmpty(UrlEnvio))
+                {
+                    UrlEnvio = Utilidades.ObtenerUrl(EntornoProduccion, VeriFactu);
+                }
+
+                // Valida que se haya pasado el numero de factura
+                if(string.IsNullOrEmpty(NumeroFactura))
+                {
+                    resultado.AppendLine("El parámetro 'numeroFactura' es obligatorio.");
+                }
+
+                // Valida que se haya pasado la fecha de la factura
+                if(FechaFactura == DateTime.MinValue)
+                {
+                    resultado.AppendLine("El parámetro 'fechaFactura' es obligatorio.");
+                }
+
+                // Valida que se haya pasado el total de la factura
+                if(TotalFactura == 0)
+                {
+                    resultado.AppendLine("El parámetro 'totalFactura' es obligatorio.");
+                }
+
+                // Valida si el color pasado es valido
+                if(!Utilidades.ColorValido(ColorQR))
+                {
+                    resultado.AppendLine("El codigo de color del QR no es valido");
+                }
+
+                // Con los datos anteriores correctos se genera la URL de envio del QR
+                Utilidades.GenerarURL();
+            }
+
+            // En caso de que se pase un fichero con el QR, valida que exista
+            else
+            {
+                // Chequea que el fichero del QR existe
+                if(!File.Exists(NombreFicheroQR))
+                {
+                    resultado.AppendLine("El fichero del código QR no existe.");
+                }
+            }
+
+            return resultado;
+        }
+
+
     }
 }

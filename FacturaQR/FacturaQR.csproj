@@ -64,6 +64,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Configuracion_visor.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="dse.ico" />
     <Content Include="SumatraPDF.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

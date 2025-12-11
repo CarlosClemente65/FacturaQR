@@ -1,1 +1,1 @@
-El PDF de entrada no existe.
+Error al insertar el QR: No se puede dejar vacío el nombre de la ruta de acceso.

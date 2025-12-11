@@ -1,52 +1,48 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 
 namespace FacturaQR
 {
     public class Program
     {
-        public static string RutaFicheros = Directory.GetCurrentDirectory();
         static void Main(string[] args)
         {
-            string resultado = string.Empty;
+            StringBuilder resultado = new StringBuilder();
             try
             {
                 // Cargar configuración
                 resultado = Configuracion.CargarParametros(args);
 
-                // Insertar QR si no hay errores de configuración
-                if(string.IsNullOrEmpty(resultado))
+                // Valida parametros obligatorios en caso de que haya que añadir el QR
+                if(Configuracion.InsertarQR == true)
                 {
-                    if (Configuracion.AccionPDF == Configuracion.AccionesPDF.Visualizar)
+                    resultado = Configuracion.ValidarParametros(resultado);
+
+                    // Insertar QR si no hay errores de configuración
+                    if(resultado.Length == 0)
                     {
-                        // Revisa si existe el fichero de control de la salida para borrarlo antes
-                        if(File.Exists(Configuracion.FicheroSalida))
-                        {
-                            File.Delete(Configuracion.FicheroSalida);
-                        }
-                        Utilidades.GestionarSalidaPDF();
+                        resultado = InsertaQR.InsertarQR();
                     }
-                    else if (Configuracion.AccionPDF == Configuracion.AccionesPDF.CerrarVisor)
-                    {
-                        Utilidades.CerrarVisor();
-                    }
-                    else
-                    {
-                        resultado += InsertaQR.InsertarQR();
-                    }
+                }
+
+                if(resultado.Length == 0)
+                {
+                    // Ejecuta las acciones adicionales que se hayan solicitado
+                    Utilidades.GestionarAcciones();
                 }
             }
 
             catch(Exception ex)
             {
-                resultado += $"Se ha producido un error al procesar el fichero. Mensaje: {ex.Message}";
+                resultado.AppendLine($"Se ha producido un error al procesar el fichero. Mensaje: {ex.Message}");
             }
 
             // Guardar resultados en errores.txt si hay errores
-            if(!string.IsNullOrEmpty(resultado))
+            if(resultado.Length > 0)
             {
-                File.WriteAllText(Path.Combine(Configuracion.RutaFicheros, "errores.txt"), resultado);
+                File.WriteAllText(Path.Combine(Configuracion.RutaFicheros, "errores.txt"), resultado.ToString());
             }
         }
     }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Documents;
 using PdfSharp.Drawing;
@@ -14,12 +15,18 @@ namespace FacturaQR
 {
     public class InsertaQR
     {
-        public static string InsertarQR()
+        public static StringBuilder InsertarQR()
         {
             // Asignacion de propiedades para usarlas en la clase
-            string resultado = string.Empty;
+            StringBuilder resultado = new StringBuilder();
             string rutaPdfOriginal = Configuracion.PdfEntrada;
             string rutaPdfSalida = Configuracion.PdfSalida;
+            
+            // Si no se ha pasado el fichero de salida, se asigna un valor por defecto
+            if(string.IsNullOrEmpty(rutaPdfSalida))
+            {
+                rutaPdfSalida = Path.Combine(Configuracion.RutaFicheros, Path.GetFileNameWithoutExtension(rutaPdfOriginal) + "_salida.pdf");
+            }
             string textoQr = Configuracion.UrlEnvio ?? string.Empty;
             string textoArriba = Configuracion.TextoArriba;
             string textoAbajo = Configuracion.TextoAbajo;
@@ -55,14 +62,13 @@ namespace FacturaQR
                     using(QRCodeData qrCodeData = qrGenerator.CreateQrCode(textoQr, QRCodeGenerator.ECCLevel.Q))
                     using(QRCode qrCode = new QRCode(qrCodeData))
                     using(Bitmap qrBitmap = qrCode.GetGraphic(20))
+                    using(var ms = new System.IO.MemoryStream())
                     {
-                        using(var ms = new System.IO.MemoryStream())
-                        {
-                            qrBitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                            ms.Position = 0;
-                            qrImage = XImage.FromStream(ms);
-                        }
+                        qrBitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                        ms.Position = 0;
+                        qrImage = XImage.FromStream(ms);
                     }
+
                 }
 
                 // Se estable la pagina 1 del PDF para añadir las imagenes (QR y marca de agua)
@@ -106,25 +112,18 @@ namespace FacturaQR
 
                 // Guarda el PDF modificado en la ruta de salida
                 documento.Save(rutaPdfSalida);
-
-                // Si se ha pasado el parametro de impresion, se lanza la impresion del PDF generado
-                if(Configuracion.EjecutarAcciones)
-                {
-                    // Lanza el metodo para imprimir, abrir o visualizar el PDF
-                    Utilidades.GestionarSalidaPDF();
-                }
             }
 
             // Captura de error si no esta diponible el programa de impresion
             catch(InvalidOperationException ex)
             {
-                resultado = ex.Message;
+                resultado.AppendLine(ex.Message);
             }
 
             // Captura el error generico al insertar el QR
             catch(Exception ex)
             {
-                resultado = "Error al insertar el QR: " + ex.Message;
+                resultado.AppendLine($"Error al insertar el QR: {ex.Message}");
             }
 
             return resultado;
