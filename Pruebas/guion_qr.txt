@@ -1,7 +1,0 @@
-pdfentrada="c:\Programacion\C#\FacturaQR\Pruebas\Factura.pdf"
-pdfsalida="c:\Programacion\C#\FacturaQR\Pruebas\Factura_qrExterno.pdf"
-ficheroqr="c:\Programacion\C#\FacturaQR\Pruebas\qr-code.png"
-posicionx=170
-posiciony=5
-ancho=30
-color=#0000FF

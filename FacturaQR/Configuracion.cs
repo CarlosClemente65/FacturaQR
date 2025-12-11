@@ -10,7 +10,7 @@ namespace FacturaQR
     public static class Configuracion
     {
         public static string PdfEntrada { get; private set; }
-        public static string PdfSalida { get; private set; }
+        public static string PdfSalida { get; set; }
         public static string RutaFicheros { get; private set; } = Directory.GetCurrentDirectory();
 
         public static string FicheroSalida { get; set; } // Fichero de control para gestionar la visualizacion de los PDF y saber cuando termina el programa.
@@ -61,14 +61,16 @@ namespace FacturaQR
             Ninguna,
             Imprimir,
             Abrir,
-            Visualizar,
-            CerrarVisor
+            Visualizar
         }
 
         public static AccionesPDF AccionPDF { get; private set; }
 
         // Controla si hay que realizar alguna accion con el PDF
-        //public static bool EjecutarAcciones { get; private set; } = false;
+        public static bool EjecutarAcciones { get; set; } = false;
+
+        // Controla si hay que cerrar el visor
+        public static bool CerrarVisor {get; set;} = false;
 
 
         public static StringBuilder CargarParametros(string[] args)
@@ -99,13 +101,21 @@ namespace FacturaQR
                     continue;
                 }
 
+                // Divide en dos partes las lineas del guion
                 string[] partes = linea
                     .Split(new char[] { '=' }, 2)
                     .Select(p => p.Trim())
                     .ToArray();
+
+                // Chequea que tenga dos partes (clave y valor)
                 if(partes.Length == 2)
                 {
                     AsignaParametros(partes[0], partes[1]);
+                }
+                else if(string.Equals(partes[0], "cerrarvisor", StringComparison.OrdinalIgnoreCase))
+                {
+                    // El parametro 'cerrarvisor' no tiene dos partes y se trata de forma independiente
+                    CerrarVisor = true;
                 }
             }
 
@@ -238,20 +248,19 @@ namespace FacturaQR
                     {
                         case "imprimir":
                             AccionPDF = AccionesPDF.Imprimir;
+                            EjecutarAcciones = true;
                             break;
 
                         case "abrir":
                             AccionPDF = AccionesPDF.Abrir;
+                            EjecutarAcciones = true;
                             break;
 
                         case "visualizar":
                             AccionPDF = AccionesPDF.Visualizar;
+                            EjecutarAcciones = true;
                             break;
 
-                        case "cerrarvisor":
-                            AccionPDF = AccionesPDF.CerrarVisor;
-                            InsertarQR = false;
-                            break;
                     }
                     break;
 
@@ -259,9 +268,9 @@ namespace FacturaQR
                     // Fichero para controlar si se ha terminado el proceso
                     FicheroSalida = valor;
                     // Revisa si existe el fichero para borrarlo antes
-                    if(File.Exists(Configuracion.FicheroSalida))
+                    if(File.Exists(FicheroSalida))
                     {
-                        File.Delete(Configuracion.FicheroSalida);
+                        File.Delete(FicheroSalida);
                     }
                     break;
             }

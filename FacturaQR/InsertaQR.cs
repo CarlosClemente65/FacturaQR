@@ -13,20 +13,12 @@ using QRCoder;
 
 namespace FacturaQR
 {
-    public class InsertaQR
+    public static class InsertaQR
     {
-        public static StringBuilder InsertarQR()
+        public static StringBuilder InsertarQR(PdfPage pagina, XGraphics gfx, StringBuilder resultado)
         {
-            // Asignacion de propiedades para usarlas en la clase
-            StringBuilder resultado = new StringBuilder();
-            string rutaPdfOriginal = Configuracion.PdfEntrada;
-            string rutaPdfSalida = Configuracion.PdfSalida;
             
-            // Si no se ha pasado el fichero de salida, se asigna un valor por defecto
-            if(string.IsNullOrEmpty(rutaPdfSalida))
-            {
-                rutaPdfSalida = Path.Combine(Configuracion.RutaFicheros, Path.GetFileNameWithoutExtension(rutaPdfOriginal) + "_salida.pdf");
-            }
+            // Configuracion de las propiedades del QR
             string textoQr = Configuracion.UrlEnvio ?? string.Empty;
             string textoArriba = Configuracion.TextoArriba;
             string textoAbajo = Configuracion.TextoAbajo;
@@ -37,42 +29,13 @@ namespace FacturaQR
             double ancho = XUnit.FromMillimeter(Configuracion.Ancho).Point;
             double alto = XUnit.FromMillimeter(Configuracion.Alto).Point;
 
-
             // Convierte el color hexadecimal para usarlo en el QR
             Color colorQR = ColorTranslator.FromHtml(Configuracion.ColorQR);
 
             try
             {
-                // Abre el PDF al que insertar las imagenes
-                PdfDocument documento = PdfReader.Open(rutaPdfOriginal, PdfDocumentOpenMode.Modify);
-
-                // Crea el objeto del QR para luego leerlo del fichero o generarlo
-                XImage qrImage = null;
-
-                // Carga o genera el código QR
-                if(Configuracion.UsarQrExterno == true)
-                {
-                    // Si se pasa un fichero externo, se carga la imagen en el objeto QR
-                    qrImage = XImage.FromFile(Configuracion.NombreFicheroQR);
-                }
-                else
-                {
-                    // Si no, se genera el código QR a partir del texto proporcionado
-                    using(QRCodeGenerator qrGenerator = new QRCodeGenerator())
-                    using(QRCodeData qrCodeData = qrGenerator.CreateQrCode(textoQr, QRCodeGenerator.ECCLevel.Q))
-                    using(QRCode qrCode = new QRCode(qrCodeData))
-                    using(Bitmap qrBitmap = qrCode.GetGraphic(20))
-                    using(var ms = new System.IO.MemoryStream())
-                    {
-                        qrBitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                        ms.Position = 0;
-                        qrImage = XImage.FromStream(ms);
-                    }
-
-                }
-
-                // Se estable la pagina 1 del PDF para añadir las imagenes (QR y marca de agua)
-                PdfPage pagina = documento.Pages[0];
+                // Genera el codigo QR segun si es una imagen o se han pasado los datos
+                XImage qrImage = GenerarQR(textoQr);
 
                 // Ajuste de la posicion del QR por si hay desbordamiento a la derecha
                 double desbordaDerecha = posX + ancho - pagina.Width;
@@ -81,14 +44,11 @@ namespace FacturaQR
                     posX -= desbordaDerecha + 10;
                 }
 
-                // Se crea un recuadro donde se incluira el QR y los textos
-                XGraphics gfx = XGraphics.FromPdfPage(pagina);
 
                 // Primero se inserta la marca de agua (si tiene contenido) para que quede debajo del todo
-                string marcaAgua = Configuracion.MarcaAgua;
-                if(!string.IsNullOrEmpty(marcaAgua))
+                if(!string.IsNullOrEmpty(Configuracion.MarcaAgua))
                 {
-                    pagina = InsertaMarcaAgua(pagina, gfx);
+                    pagina = Utilidades.InsertaMarcaAgua(pagina, gfx, Configuracion.MarcaAgua);
                 }
 
                 double altoFuente = 8; // Altura aproximada del texto en puntos
@@ -108,10 +68,9 @@ namespace FacturaQR
                 // Por ultimo se inserta el texto debajo del QR y centrado
                 gfx.DrawString(textoAbajo, font, brocha, new XRect(posX, posY + alto, ancho, altoFuente), XStringFormats.Center);
 
+                // Libera la imagen del QR
                 qrImage.Dispose();
 
-                // Guarda el PDF modificado en la ruta de salida
-                documento.Save(rutaPdfSalida);
             }
 
             // Captura de error si no esta diponible el programa de impresion
@@ -129,95 +88,35 @@ namespace FacturaQR
             return resultado;
         }
 
-
-        private static PdfPage InsertaMarcaAgua(PdfPage pagina, XGraphics gfx)
+        private static XImage GenerarQR(string textoQr)
         {
-            // Texto de la marca de agua
-            string marcaAgua = Configuracion.MarcaAgua;
-
-            // Fuente y pincel para dibujar el texto
-            XFont fuenteMarca = new XFont("Arial", 20, XFontStyle.BoldItalic);
-            XBrush pincelMarca = new XSolidBrush(XColor.FromArgb(0, 225, 225, 225)); // Gris muy claro (el primer cero es la transparencia pero no se puede aplicar a un PDF)
-
-            // Ajuste en varias lineas si es necesario
-            List<string> lineas = new List<string>();
-            string[] bloques = marcaAgua.Split(new string[] { "\n" }, StringSplitOptions.None);
-            string linea = "";
-
-            // Se define un cuadrado seguro de 210x210 mm para insertar la marca
-            double margenMm = 10;
-            double margen = XUnit.FromMillimeter(margenMm).Point;
-            double ladoCuadradoMm = 210;
-            double ladoCuadrado = XUnit.FromMillimeter(ladoCuadradoMm).Point;
-
-            // Calcula el centro del cuadrado
-            double xInicioCuadrado = margen;
-            double yInicioCuadrado = (pagina.Height.Point - ladoCuadrado) / 2;
-            double centroX = xInicioCuadrado + ladoCuadrado / 2;
-            double centroY = yInicioCuadrado + ladoCuadrado / 2;
-
-            // Calculo del ancho maximo de la marca de agua aproximado a la diagonal del cuadrado seguro)
-            double anchoMaximo = ladoCuadrado;
-
-            // Se divide el texto en lineas que no sobrepasen el ancho maximo
-            foreach(var bloque in bloques)
+            XImage qrGenerado;
+            // Carga o genera el código QR
+            if(Configuracion.UsarQrExterno == true)
             {
-                string[] palabras = bloque.Split(' ');
-
-                foreach(var palabra in palabras)
+                // Si se pasa un fichero externo, se carga la imagen en el objeto QR
+                qrGenerado = XImage.FromFile(Configuracion.NombreFicheroQR);
+            }
+            else
+            {
+                // Si no, se genera el código QR a partir del texto proporcionado
+                using(QRCodeGenerator qrGenerator = new QRCodeGenerator())
+                using(QRCodeData qrCodeData = qrGenerator.CreateQrCode(textoQr, QRCodeGenerator.ECCLevel.Q))
+                using(QRCode qrCode = new QRCode(qrCodeData))
+                using(Bitmap qrBitmap = qrCode.GetGraphic(20))
+                using(var ms = new System.IO.MemoryStream())
                 {
-                    // Primera parte, añadir a la linea actual
-                    string textoLinea = string.IsNullOrEmpty(linea) ? palabra : linea + " " + palabra;
-                    XSize size = gfx.MeasureString(textoLinea, fuenteMarca);
-
-                    // Si sobrepasa el ancho maximo, se guarda la linea actual y se inicia una nueva
-                    if(size.Width > anchoMaximo)
-                    {
-                        if(!string.IsNullOrEmpty(linea))
-                        {
-                            lineas.Add(linea);
-                        }
-                        linea = palabra;
-                    }
-                    else
-                    {
-                        linea = textoLinea;
-                    }
+                    qrBitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                    ms.Position = 0;
+                    qrGenerado = XImage.FromStream(ms);
                 }
 
-                // Se añade la ultima linea calculada
-                if(!string.IsNullOrEmpty(linea))
-                {
-                    lineas.Add(linea);
-                    linea = "";
-                }
             }
 
-            // Se guarda la configuracion para aplicarla solo a la marca de agua
-            gfx.Save();
-
-            // Rotacion 45 grados a la izquierda para poner la marca de agua
-            gfx.RotateAtTransform(-45, new XPoint(centroX, centroY));
-
-            // Posicion inicial del texto (centrado en el cuadro)
-            double x = centroX;
-            double y = centroY - (lineas.Count * fuenteMarca.Size / 2);
-
-
-            // Se dibujan una a una las lineas de la marca de agua
-            foreach(var l in lineas)
-            {
-                gfx.DrawString(l, fuenteMarca, pincelMarca, new XPoint(x, y), XStringFormats.Center);
-
-                // Se recalcula la posicion del margen Y segun el tamaño de la fuente para desplazarlo hacia abajo
-                y += fuenteMarca.Size;
-            }
-
-            // Se restaura la configuracion para aplicar al resto del texto
-            gfx.Restore();
-
-            return pagina;
+            return qrGenerado;
         }
+
+        
     }
 }
 

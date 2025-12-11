@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+using PdfSharp.Drawing;
+using PdfSharp.Pdf;
+using PdfSharp.Pdf.IO;
 
 namespace FacturaQR
 {
@@ -26,6 +27,22 @@ namespace FacturaQR
             }
         }
 
+        // Crea el documento en el que se insertara el QR o los textos
+        public static PdfDocument Generardocumento(string rutaPdfEntrada)
+        {
+            try
+            {
+                // Genera el documento PDF para luego poder insertar las imagenes
+                PdfDocument documento = PdfReader.Open(rutaPdfEntrada, PdfDocumentOpenMode.Modify);
+                return documento;
+            }
+
+            catch(Exception ex)
+            {
+                throw new InvalidOperationException($"Se ha producido un error al procesar el PDF. {ex.Message}");
+            }
+
+        }
 
         // Comprueba que el codigo de color sea valido
         public static bool ColorValido(string colorHex)
@@ -55,13 +72,6 @@ namespace FacturaQR
                 : Configuracion.PdfSalida;
             try
             {
-                if (accionPDF == Configuracion.AccionesPDF.CerrarVisor)
-                {
-                    CerrarVisor();
-                    return; // Si la accion es cerrar el visor, no hay que ejecutar nada mas
-                }
-
-
                 // Ruta del ejecutable SumatraPDF 
                 string rutaBase = AppDomain.CurrentDomain.BaseDirectory;
                 string sumatraExe = Path.Combine(rutaBase, "SumatraPDF.exe");
@@ -107,7 +117,7 @@ namespace FacturaQR
                         // En el modo de visualizar se cierra el visor sin espera
                         if(accionPDF == Configuracion.AccionesPDF.Visualizar)
                         {
-                            espera = false; 
+                            espera = false;
                         }
 
                         break;
@@ -127,12 +137,6 @@ namespace FacturaQR
                             throw new InvalidOperationException($"La impresión del PDF falló. Código de salida: {proceso.ExitCode}");
                         }
                     }
-
-                    if(Configuracion.FicheroSalida != null)
-                    {
-                        // Genera el fichero de control de salida una vez termine la ejecucion
-                        File.WriteAllText(Configuracion.FicheroSalida, "OK");
-                    }
                 }
 
             }
@@ -145,16 +149,102 @@ namespace FacturaQR
         public static void CerrarVisor()
         {
             var listaProcesos = Process.GetProcessesByName("SumatraPDF");
-            foreach(var proc in listaProcesos)
+            foreach(var proceso in listaProcesos)
             {
-                // Cierre normal del proceso
-                proc.CloseMainWindow();
-
                 // Forzar cierre si sigue activo
-                if(!proc.WaitForExit(2000))
+                proceso.Kill();
+            }
+        }
+
+        public static PdfPage InsertaMarcaAgua(PdfPage pagina, XGraphics gfx, string marcaAgua)
+        {
+            try
+            {
+                // Fuente y pincel para dibujar el texto
+                XFont fuenteMarca = new XFont("Arial", 20, XFontStyle.BoldItalic);
+                XBrush pincelMarca = new XSolidBrush(XColor.FromArgb(0, 225, 225, 225)); // Gris muy claro (el primer cero es la transparencia pero no se puede aplicar a un PDF)
+
+                // Ajuste en varias lineas si es necesario
+                List<string> lineas = new List<string>();
+                string[] bloques = marcaAgua.Split(new string[] { "\n" }, StringSplitOptions.None);
+                string linea = "";
+
+                // Se define un cuadrado seguro de 210x210 mm para insertar la marca
+                double margenMm = 10;
+                double margen = XUnit.FromMillimeter(margenMm).Point;
+                double ladoCuadradoMm = 210;
+                double ladoCuadrado = XUnit.FromMillimeter(ladoCuadradoMm).Point;
+
+                // Calcula el centro del cuadrado
+                double xInicioCuadrado = margen;
+                double yInicioCuadrado = (pagina.Height.Point - ladoCuadrado) / 2;
+                double centroX = xInicioCuadrado + ladoCuadrado / 2;
+                double centroY = yInicioCuadrado + ladoCuadrado / 2;
+
+                // Calculo del ancho maximo de la marca de agua aproximado a la diagonal del cuadrado seguro)
+                double anchoMaximo = ladoCuadrado;
+
+                // Se divide el texto en lineas que no sobrepasen el ancho maximo
+                foreach(var bloque in bloques)
                 {
-                    proc.Kill();
+                    foreach(var palabra in bloque.Split(' ')) // Separa por palabras
+                    {
+                        // Primera parte, añadir a la linea actual
+                        string textoLinea = string.IsNullOrEmpty(linea) ? palabra : linea + " " + palabra;
+                        XSize size = gfx.MeasureString(textoLinea, fuenteMarca);
+
+                        // Si sobrepasa el ancho maximo, se guarda la linea actual y se inicia una nueva
+                        if(size.Width > anchoMaximo)
+                        {
+                            if(!string.IsNullOrEmpty(linea))
+                            {
+                                lineas.Add(linea);
+                            }
+                            linea = palabra;
+                        }
+                        else
+                        {
+                            linea = textoLinea;
+                        }
+                    }
+
+                    // Se añade la ultima linea calculada
+                    if(!string.IsNullOrEmpty(linea))
+                    {
+                        lineas.Add(linea);
+                        linea = "";
+                    }
                 }
+
+                // Se guarda la configuracion para aplicarla solo a la marca de agua
+                gfx.Save();
+
+                // Rotacion 45 grados a la izquierda para poner la marca de agua
+                gfx.RotateAtTransform(-45, new XPoint(centroX, centroY));
+
+                // Posicion inicial del texto (centrado en el cuadro)
+                double x = centroX;
+                double y = centroY - (lineas.Count * fuenteMarca.Size / 2);
+
+
+                // Se dibujan una a una las lineas de la marca de agua
+                foreach(var l in lineas)
+                {
+                    gfx.DrawString(l, fuenteMarca, pincelMarca, new XPoint(x, y), XStringFormats.Center);
+
+                    // Se recalcula la posicion del margen Y segun el tamaño de la fuente para desplazarlo hacia abajo
+                    y += fuenteMarca.Size;
+                }
+
+                // Se restaura la configuracion para aplicar al resto del texto
+                gfx.Restore();
+
+                return pagina;
+            }
+
+            catch(InvalidOperationException ex)
+            {
+                throw new InvalidOperationException($"Se ha producido un error al insertar la marca de agua. {ex.Message}");
             }
         }
     }
