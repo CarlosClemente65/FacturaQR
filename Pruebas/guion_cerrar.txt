@@ -1,1 +1,2 @@
-accionpdf=cerrarvisor
+cerrarvisor
+ficherosalida=c:\Programacion\c#\FacturaQR\Pruebas\fin_cerrar.txt

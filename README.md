@@ -21,6 +21,7 @@ Tambien puede usarse como visualizador de ficheros PDF.
 * v1.5.0.0 Incorporada la opcion para abrir el PDF en el visor SumatraPDF
 * v1.6.0.0 Incorporada la opcion para visualizar cualquier PDF que se pase por parametro (sin utilizar la insercion del QR)
 * v1.7.0.0 Incorporada la opcion para cerrar los procesos abiertos del visor SumatraPDF
+* v1.8.0.0 Incorporada la posibilidad de añadir la marca de agua a cualquier PDF que se pase
 <br><br>
 
 
@@ -46,7 +47,8 @@ FacturaQR.exe ds123456 guion.txt
 * ancho=ancho del QR en milimetros (el alto sera el mismo); opcional
 * color=Color del QR en formato hexadecimal; opcional
 * marcaagua=Texto para insertar una marca de agua en el documento; opcional
-* accionpdf=[imprimir | abrir | visualizar | cerrarvisor]; Acciones adicionales a realizar con el PDF; opcional
+* accionpdf=[imprimir | abrir | visualizar]; Acciones adicionales a realizar con el PDF; opcional
+* cerrarvisor ;Permite dar la orden de cerrar el visor; opcional
 * ficherosalida=nombre del fichero para controlar la finalizacion del proceso
 
 <br>
@@ -70,7 +72,7 @@ FacturaQR.exe ds123456 guion.txt
 	- 'abrir' = Abre el PDF generado con el visor; la aplicacion espera a que se cierre el visor para continuar
 	- 'imprimir' = Lanza el PDF generado por la impresora predeterminada
 	- 'visualizar' = Abre el PDF pasado por parametro con el visor; la aplicacion continua sin esperar al cierre del visor
-	- 'cerrarvisor' = Cierra todos los procesos abiertos del visor SumatraPDF; no es necesario pasar ningun parametro mas
+* El parametro cerrarvisor' permite cerrar todos los procesos abiertos del visor SumatraPDF; no es necesario pasar ningun parametro mas
 * Si se incluye el parametro 'ficherosalida' la aplicacion genera un fichero que puede usarse para controlar si la aplicacion ha terminado o no. 
   Con el parametro 'visualizar' la aplicacion no se detiene aunque no se cierre el visor, por lo que se generara (si se ha indicado) el fichero de salida
 * En la ruta de ejecucion deben estar los siguientes ficheros:
@@ -79,5 +81,4 @@ FacturaQR.exe ds123456 guion.txt
 	- SumatraPDF.exe (necesario si se utiliza la opcion de impresion)
 * El fichero 'Configuracion_visor.txt' es una copia modificada con los parametros del visor, 
   Para usarla debe renombrarse como "SumatraPDF-settings.txt" y ubicarla en la misma ruta que el visor SumatraPDF.
-
 

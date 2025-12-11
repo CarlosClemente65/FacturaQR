@@ -1,0 +1,5 @@
+pdfentrada=C:\Programacion\c#\FacturaQR\Pruebas\Factura.pdf
+MARCAAGUA=FACTURA BORRADOR SIN VALIDEZ A EFECTOS FISCALES \nY ALGUN TEXOTO MAS PARA QUE DESBORDE Y VER COMO SE AJUSTA
+accionpdf=visualizar
+cerrarvisor
+ficherosalida=C:\Programacion\c#\FacturaQR\Pruebas\salida_marcaacua.txt

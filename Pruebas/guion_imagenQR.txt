@@ -6,4 +6,6 @@ posiciony=5
 ancho=30
 marcaagua=
 verifactu=si
-accionpdf=visualizar
+accionpdf=abrir
+ficherosalidas=C:\Programacion\c#\FacturaQR\Pruebas\salida.txt
+cerrarvisor

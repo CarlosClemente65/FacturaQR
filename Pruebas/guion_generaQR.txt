@@ -12,3 +12,4 @@ ancho=25
 color=#000000
 accionpdf=abrir
 ficherosalida=C:\Programacion\c#\FacturaQR\Pruebas\salida.txt
+cerrarvisor
