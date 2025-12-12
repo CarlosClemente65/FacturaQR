@@ -12,6 +12,12 @@ namespace FacturaQR
 {
     public static class Utilidades
     {
+        // Ruta del ejecutable SumatraPDF 
+        static string rutaBase = AppDomain.CurrentDomain.BaseDirectory;
+        static string rutaSumatra = Path.Combine(rutaBase, "SumatraPDF.exe");
+        static string cacheSumatra = Path.Combine(rutaBase, "sumatrapdfcache");
+
+
         // Establece la ruta para insertar el QR en funcion del entorno y si aplica Verifactu
         public static string ObtenerUrl(bool produccion, bool verifactu)
         {
@@ -76,27 +82,23 @@ namespace FacturaQR
                 : Configuracion.PdfSalida;
             try
             {
-                // Ruta del ejecutable SumatraPDF 
-                string rutaBase = AppDomain.CurrentDomain.BaseDirectory;
-                string sumatraExe = Path.Combine(rutaBase, "SumatraPDF.exe");
-                string rutaCache = Path.Combine(rutaBase, "sumatrapdfcache");
-
                 // Borrado de la carpeta de cache antes de la ejecucion
-                if(Directory.Exists(rutaCache))
+                if(Directory.Exists(cacheSumatra))
                 {
-                    Directory.Delete(rutaCache, true);
+                    Directory.Delete(cacheSumatra, true);
                 }
 
                 // Controla si esta disponible el programa para evitar excepciones
-                if(!File.Exists(sumatraExe))
+                if(!File.Exists(rutaSumatra))
                 {
                     throw new InvalidOperationException("No se pudo lanzar la impresion del PDF.");
                 }
 
+
                 // Crea un proceso para ejecutar el programa SumatraPDF
                 var psi = new ProcessStartInfo();
-                psi.FileName = sumatraExe;
-                psi.WorkingDirectory = Path.GetDirectoryName(sumatraExe);
+                psi.FileName = rutaSumatra;
+                psi.WorkingDirectory = Path.GetDirectoryName(rutaSumatra);
 
                 bool espera = true; // Indica si hay que esperar al cierre del visor
 
@@ -131,6 +133,7 @@ namespace FacturaQR
                 // Inicia el proceso configurado
                 using(var proceso = Process.Start(psi))
                 {
+
                     if(espera)
                     {
                         proceso.WaitForExit();
@@ -150,15 +153,30 @@ namespace FacturaQR
             }
         }
 
-        // Cierra todas las instancias del visor SumatraPDF que esten abiertas
-        public static void CerrarVisor()
+        // Cierra todas las instancias del visor SumatraPDF que esten abiertas, matando la tarea del administrador de tareas (no implementado, lo dejo para futuras consultas)
+        public static void ForzarCerrarVisor()
         {
-            var listaProcesos = Process.GetProcessesByName("SumatraPDF");
-            foreach(var proceso in listaProcesos)
+            // Crea una lista con todos los procesos que hay abiertos de la aplicacion
+            foreach(var proceso in Process.GetProcessesByName("SumatraPDF"))
             {
                 // Forzar cierre si sigue activo
                 proceso.Kill();
             }
+        }
+
+        // Cierra todas las instancias del visor SumatraPDF que esten abiertas, mandando un comando al propio programa para cerrarse.
+        public static void CerrarVisor()
+        {
+            // Crea una lista con todos los procesos que hay abiertos de la aplicacion
+            foreach(var proceso in Process.GetProcessesByName("SumatraPDF"))
+            {
+                string argumentos = $"-dde [CmdExit]"; // Comando para cerrar la aplicacion
+                var psi = new ProcessStartInfo(rutaSumatra, argumentos); // Crea el proceso
+                psi.CreateNoWindow = true; // No crea una ventana 
+                psi.UseShellExecute = false; // No se manda como un comando de la Shell
+                Process.Start(psi); // Lanza el comando
+            }
+
         }
 
         // Inserta una marca de agua en la pagina PDF indicada
